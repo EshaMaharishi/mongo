@@ -737,12 +737,11 @@ startMongodEmpty = function () {
 }
 
 startMongod = function () {
-    print("startMongod WARNING DELETES DATA DIRECTORY THIS IS FOR TESTING ONLY");
-    return startMongodEmpty.apply(null, arguments);
+    return MongoRunner.runMongod( arguments, true );
 }
+
 startMongodNoReset = function(){
-    var args = createMongoArgs( "mongod" , arguments );
-    return startMongoProgram.apply( null, args );
+    return MongoRunner.runMongod( arguments, false );
 }
 
 startMongos = function(args){
