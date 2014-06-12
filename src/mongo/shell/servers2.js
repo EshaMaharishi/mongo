@@ -58,6 +58,12 @@ connectionURLTheSame = function( a , b ){
     }
 }
 
+assert( connectionURLTheSame( "foo" , "foo" ) )
+assert( ! connectionURLTheSame( "foo" , "bar" ) )
+
+assert( connectionURLTheSame( "foo/a,b" , "foo/b,a" ) )
+assert( ! connectionURLTheSame( "foo/a,b" , "bar/a,b" ) )
+
 createMongoArgs = function( binaryName , args ){
     var fullArgs = [ binaryName ];
 
@@ -547,52 +553,36 @@ MongoRunner.mongosOptions = function( opts ){
  * 
  * @see MongoRunner.arrOptions
  */
-
-MongoRunner.runMongod
-function ( opts, resetDbPath ){
-
+MongoRunner.runMongod = function( opts ){
+    
     opts = opts || {}
     var useHostName = false;
     var runId = null;
     var waitForConnect = true;
     var fullOptions = opts;
-
-    if( opts instanceof Array ){
-        if( resetDbPath ){
-            var dbpath = _parsePath.apply(null, opts);
-            print( "Resetting db path '" + dbpath + "'" )
-            resetDbPath( dbpath );
-        }
-    }
-    else if( isObject( opts ) ) {
-
+    
+    if( isObject( opts ) ) {
+        
         opts = MongoRunner.mongodOptions( opts );
         fullOptions = opts;
-
+        
         useHostName = opts.useHostName || opts.useHostname;
         runId = opts.runId;
         waitForConnect = opts.waitForConnect;
-
+        
         if( opts.forceLock ) removeFile( opts.dbpath + "/mongod.lock" )
         if( ( opts.cleanData || opts.startClean ) || ( ! opts.restart && ! opts.noCleanData ) ){
             print( "Resetting db path '" + opts.dbpath + "'" )
             resetDbpath( opts.dbpath )
         }
-
-        // convert options object into an array of command line arguments to mongod
+        
         opts = MongoRunner.arrOptions( "mongod", opts )
-        print( "was object" );
     }
 
-    opts = appendSetParameterArgs( opts );
-
-    var port = _parsePort.apply(null, opts );
-    var ret = MongoRunner.run( opts, port, waitForConnect );
-    var mongod = ret["conn"];
-
+    var mongod = MongoRunner.startWithArgs(opts, waitForConnect);
     if (!waitForConnect) mongos = {};
     if (!mongod) return null;
-
+    
     mongod.commandLine = MongoRunner.arrToOpts( opts )
     mongod.name = (useHostName ? getHostName() : "localhost") + ":" + mongod.commandLine.port
     mongod.host = mongod.name
@@ -600,7 +590,7 @@ function ( opts, resetDbPath ){
     mongod.runId = runId || ObjectId()
     mongod.savedOptions = MongoRunner.savedOptions[ mongod.runId ];
     mongod.fullOptions = fullOptions;
-
+    
     return mongod
 }
 
