@@ -733,13 +733,9 @@ MongoRunner.getAndPrepareDumpDirectory = function(testName) {
 // The specified 'dbpath' is cleared if it exists, created if not.
 // var conn = startMongodEmpty("--port", 30000, "--dbpath", "asdf");
 startMongodEmpty = function () {
-    var args = createMongoArgs("mongod", arguments);
-
-    var dbpath = _parsePath.apply(null, args);
-    resetDbpath(dbpath);
-
-    return startMongoProgram.apply(null, args);
+    return MongoRunner.runMongod( arguments, true );
 }
+
 startMongod = function () {
     print("startMongod WARNING DELETES DATA DIRECTORY THIS IS FOR TESTING ONLY");
     return startMongodEmpty.apply(null, arguments);
