@@ -7,7 +7,7 @@ port = allocatePorts( 1 )[ 0 ];
 baseName = "jstests_disk_quota3";
 dbpath = MongoRunner.dataPath + baseName;
 
-m = startMongodEmpty( "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--quotaFiles", "3", "--smallfiles" );
+m = startMongod( "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--quotaFiles", "3", "--smallfiles" );
 db = m.getDB( baseName );
 
 db.createCollection( baseName, {size:128*1024*1024} );

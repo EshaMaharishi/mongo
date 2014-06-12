@@ -16,7 +16,7 @@
 
 var port = allocatePorts(1)[0];
 baseName = "jstests_restorewithauth";
-var conn = startMongodEmpty( "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface",
+var conn = startMongod( "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface",
                         "--nojournal", "--bind_ip", "127.0.0.1" );
 
 // write to ns foo.bar
@@ -47,7 +47,7 @@ foo.dropDatabase();
 stopMongod( port );
 
 // start mongod with --auth
-conn = startMongodEmpty( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface",
+conn = startMongod( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface",
                     "--nojournal", "--bind_ip", "127.0.0.1" );
 
 // admin user

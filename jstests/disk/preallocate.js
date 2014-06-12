@@ -4,7 +4,7 @@ port = allocatePorts( 1 )[ 0 ];
 
 var baseName = "jstests_preallocate";
 
-var m = startMongodEmpty( "--port", port, "--dbpath", MongoRunner.dataPath + baseName );
+var m = startMongod( "--port", port, "--dbpath", MongoRunner.dataPath + baseName );
 
 var getTotalNonLocalSize = function() {
     var totalNonLocalDBSize = 0;

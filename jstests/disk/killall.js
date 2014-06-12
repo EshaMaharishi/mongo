@@ -17,7 +17,7 @@ port = allocatePorts( 1 )[ 0 ]
 var baseName = "jstests_disk_killall";
 var dbpath = MongoRunner.dataPath + baseName;
 
-var mongod = startMongodEmpty( "--port", port, "--dbpath", dbpath, "--nohttpinterface" );
+var mongod = startMongod( "--port", port, "--dbpath", dbpath, "--nohttpinterface" );
 var db = mongod.getDB( "test" );
 var collection = db.getCollection( baseName );
 

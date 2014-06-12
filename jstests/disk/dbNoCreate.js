@@ -1,6 +1,6 @@
 var baseName = "jstests_dbNoCreate";
 
-var m = startMongodEmpty( "--port", "27018", "--dbpath", MongoRunner.dataPath + baseName );
+var m = startMongod( "--port", "27018", "--dbpath", MongoRunner.dataPath + baseName );
 
 var t = m.getDB( baseName ).t;
 

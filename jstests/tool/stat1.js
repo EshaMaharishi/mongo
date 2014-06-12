@@ -3,7 +3,7 @@
 port = allocatePorts( 1 )[ 0 ];
 baseName = "tool_stat1";
 
-m = startMongodEmpty( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface", "--bind_ip", "127.0.0.1" );
+m = startMongod( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface", "--bind_ip", "127.0.0.1" );
 db = m.getDB( "admin" );
 
 db.createUser({user:  "eliot" , pwd: "eliot", roles: jsTest.adminUserRoles});
