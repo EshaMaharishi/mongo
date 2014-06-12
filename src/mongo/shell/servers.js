@@ -527,6 +527,63 @@ MongoRunner.mongosOptions = function( opts ){
     return opts
 }
 
+
+/**
+ * Returns a new argArray with any test-specific arguments added.
+ */
+function appendSetParameterArgs(argArray) {
+    var programName = argArray[0];
+    if (programName.endsWith('mongod') || programName.endsWith('mongos')) {
+        if (jsTest.options().enableTestCommands) {
+            argArray.push.apply(argArray, ['--setParameter', "enableTestCommands=1"]);
+        }
+        if (jsTest.options().authMechanism && jsTest.options().authMechanism != "MONGODB-CR") {
+            var hasAuthMechs = false;
+            for (i in argArray) {
+                if (typeof argArray[i] === 'string' &&
+                    argArray[i].indexOf('authenticationMechanisms') != -1) {
+                    hasAuthMechs = true;
+                    break;
+                }
+            }
+            if (!hasAuthMechs) {
+                argArray.push.apply(argArray,
+                                    ['--setParameter',
+                                     "authenticationMechanisms=" + jsTest.options().authMechanism]);
+            }
+        }
+        if (jsTest.options().auth) {
+            argArray.push.apply(argArray, ['--setParameter', "enableLocalhostAuthBypass=false"]);
+        }
+
+        // mongos only options
+        if (programName.endsWith('mongos')) {
+            // apply setParameters for mongos
+            if (jsTest.options().setParametersMongos) {
+                var params = jsTest.options().setParametersMongos.split(",");
+                if (params && params.length > 0) {
+                    params.forEach(function(p) {
+                        if (p) argArray.push.apply(argArray, ['--setParameter', p])
+                    });
+                }
+            }
+        }
+        // mongod only options
+        else if (programName.endsWith('mongod')) {
+            // apply setParameters for mongod
+            if (jsTest.options().setParameters) {
+                var params = jsTest.options().setParameters.split(",");
+                if (params && params.length > 0) {
+                    params.forEach(function(p) {
+                        if (p) argArray.push.apply(argArray, ['--setParameter', p])
+                    });
+                }
+            }
+        }
+    }
+    return argArray;
+};
+
 /**
  * Starts a mongod instance.
  * 
@@ -640,7 +697,16 @@ MongoRunner.runMongos = function( opts ){
 }
 
 /**
- * Kills a mongod process.
+ * DEPRECATED
+ * 
+ * Use MongoRunner.runMongos instead.
+ */
+startMongos = function(args){
+    return MongoRunner.runMongos(args);
+}
+
+/**
+ * Kills a mongod or mongos process.
  *
  * @param {number} port the port of the process to kill
  * @param {number} signal The signal number to use for killing
@@ -655,31 +721,44 @@ MongoRunner.runMongos = function( opts ){
  * Note: The auth option is required in a authenticated mongod running in Windows since
  *  it uses the shutdown command, which requires admin credentials.
  */
-MongoRunner.stopMongod = function( port, signal, opts ){
-    
+MongoRunner.stop = function( port, signal, opts ){
     if( ! port ) {
-        print( "Cannot stop mongo process " + port )
-        return
+        print( "Cannot stop mongo process on port " + port );
+        return;
     }
     
-    signal = signal || 15
+    signal = signal || 15;
     
     if( port.port )
-        port = parseInt( port.port )
+        port = parseInt( port.port );
     
     if( port instanceof ObjectId ){
-        var opts = MongoRunner.savedOptions( port )
-        if( opts ) port = parseInt( opts.port )
+        var opts = MongoRunner.savedOptions( port );
+        if( opts ) port = parseInt( opts.port );
     }
     
-    var exitCode = stopMongod( parseInt( port ), parseInt( signal ), opts )
+    var exitCode = stopMongod( parseInt( port ), parseInt( signal ), opts );
     
-    delete MongoRunner.usedPortMap[ "" + parseInt( port ) ]
+    delete MongoRunner.usedPortMap[ "" + parseInt( port ) ];
 
-    return exitCode
+    return exitCode;
 }
 
-MongoRunner.stopMongos = MongoRunner.stopMongod
+/**
+ * DEPRECATED
+ * 
+ * Use MongoRunner.stop instead
+ */
+MongoRunner.stopMongod = function( port, signal, opts ){
+    MongoRunner.stop( port, signal, opts );    
+}
+
+/**
+ * DEPRECATED
+ * 
+ * Use MongoRunner.stop instead
+ */
+MongoRunner.stopMongos = MongoRunner.stop
 
 MongoRunner.isStopped = function( port ){
     
@@ -711,13 +790,35 @@ MongoRunner.isStopped = function( port ){
  * @see MongoRunner.arrOptions
  */
 MongoRunner.runMongoTool = function( binaryName, opts ){
-
     var opts = opts || {}
-
     var argsArray = MongoRunner.arrOptions(binaryName, opts)
-
     return runMongoProgram.apply(null, argsArray);
+}
 
+// TODO: see if possible to combine codepath with MongoRunner.run
+// which uses _startMongoProgram instead of _runMongoProgram
+// this is only called by MongoRunner.runMongoTool
+runMongoProgram = function() {
+    var args = argumentsToArray( arguments );
+    var progName = args[0];
+
+    if ( jsTestOptions().auth ) {
+        args = args.slice(1);
+        args.unshift( progName,
+                      '-u', jsTestOptions().authUser,
+                      '-p', jsTestOptions().authPassword,
+                      '--authenticationMechanism', DB.prototype._defaultAuthenticationMechanism,
+                      '--authenticationDatabase=admin'
+                    );
+    }
+
+    if (progName == 'mongo' && !_useWriteCommandsDefault()) {
+        progName = args[0];
+        args = args.slice(1);
+        args.unshift(progName, '--useLegacyWriteOps');
+    }
+
+    return _runMongoProgram.apply( null, args );
 }
 
 // Given a test name figures out a directory for that test to use for dump files and makes sure
@@ -728,89 +829,115 @@ MongoRunner.getAndPrepareDumpDirectory = function(testName) {
     return dir;
 }
 
-// Start a mongod instance and return a 'Mongo' object connected to it.
-// This function's arguments are passed as command line arguments to mongod.
-// The specified 'dbpath' is cleared if it exists, created if not.
-// var conn = startMongodEmpty("--port", 30000, "--dbpath", "asdf");
+/**
+ * DEPRECATED
+ *
+ * Start a mongod instance and return a 'Mongo' object connected to it.
+ * This function's arguments are passed as command line arguments to mongod.
+ * The specified 'dbpath' is cleared if it exists, created if not.
+ * var conn = startMongodEmpty("--port", 30000, "--dbpath", "asdf");
+ */
 startMongodEmpty = function () {
     return MongoRunner.runMongod( arguments, true );
 }
 
+/**
+ * DEPRECATED
+ *
+ * wipes data directory before starting
+ */ 
 startMongod = function () {
     return MongoRunner.runMongod( arguments, true );
 }
 
+/**
+ * DEPRECATED
+ *
+ * does not wipe data directory before starting
+ */
 startMongodNoReset = function(){
     return MongoRunner.runMongod( arguments, false );
 }
 
-startMongos = function(args){
-    return MongoRunner.runMongos(args);
-}
-
 /**
- * Returns a new argArray with any test-specific arguments added.
+ * DEPRECATED
+ *
+ * Use MongoRunner.runMongod instead
+ * 
+ * After initializing a MongodRunner, you must call start() on it.
+ * @param {int} port port to run db on, use allocatePorts(num) to requision
+ * @param {string} dbpath path to use
+ * @param {boolean} peer pass in false (DEPRECATED, was used for replica pair host)
+ * @param {boolean} arbiter pass in false (DEPRECATED, was used for replica pair host)
+ * @param {array} extraArgs other arguments for the command line
+ * @param {object} options other options include no_bind to not bind_ip to 127.0.0.1
+ *    (necessary for replica set testing)
  */
-function appendSetParameterArgs(argArray) {
-    var programName = argArray[0];
-    if (programName.endsWith('mongod') || programName.endsWith('mongos')) {
-        if (jsTest.options().enableTestCommands) {
-            argArray.push.apply(argArray, ['--setParameter', "enableTestCommands=1"]);
-        }
-        if (jsTest.options().authMechanism && jsTest.options().authMechanism != "MONGODB-CR") {
-            var hasAuthMechs = false;
-            for (i in argArray) {
-                if (typeof argArray[i] === 'string' &&
-                    argArray[i].indexOf('authenticationMechanisms') != -1) {
-                    hasAuthMechs = true;
-                    break;
-                }
-            }
-            if (!hasAuthMechs) {
-                argArray.push.apply(argArray,
-                                    ['--setParameter',
-                                     "authenticationMechanisms=" + jsTest.options().authMechanism]);
-            }
-        }
-        if (jsTest.options().auth) {
-            argArray.push.apply(argArray, ['--setParameter', "enableLocalhostAuthBypass=false"]);
-        }
-
-        // mongos only options
-        if (programName.endsWith('mongos')) {
-            // apply setParameters for mongos
-            if (jsTest.options().setParametersMongos) {
-                var params = jsTest.options().setParametersMongos.split(",");
-                if (params && params.length > 0) {
-                    params.forEach(function(p) {
-                        if (p) argArray.push.apply(argArray, ['--setParameter', p])
-                    });
-                }
-            }
-        }
-        // mongod only options
-        else if (programName.endsWith('mongod')) {
-            // apply setParameters for mongod
-            if (jsTest.options().setParameters) {
-                var params = jsTest.options().setParameters.split(",");
-                if (params && params.length > 0) {
-                    params.forEach(function(p) {
-                        if (p) argArray.push.apply(argArray, ['--setParameter', p])
-                    });
-                }
-            }
-        }
-    }
-    return argArray;
+MongodRunner = function( port, dbpath, peer, arbiter, extraArgs, options ) {
+    this.port_ = port;
+    this.dbpath_ = dbpath;
+    this.peer_ = peer;
+    this.arbiter_ = arbiter;
+    this.extraArgs_ = extraArgs;
+    this.options_ = options ? options : {};
 };
 
 /**
- * Start a mongo process with a particular argument array.  If we aren't waiting for connect, 
- * return null.
+ * DEPRECATED
+ *
+ * Use MongoRunner.runMongod instead
+ * 
+ * Start the mongod process.
+ *
+ * @param {boolean} reuseData If the data directory should be left intact (default is to wipe it)
  */
-MongoRunner.startWithArgs = function(argArray, waitForConnect) {
-    // TODO: Make there only be one codepath for starting mongo processes
+MongodRunner.prototype.start = function( reuseData ) {
+    var args = [];
+    if ( reuseData ) {
+        args.push( "mongod" );
+    }
+    args.push( "--port" );
+    args.push( this.port_ );
+    args.push( "--dbpath" );
+    args.push( this.dbpath_ );
+    args.push( "--nohttpinterface" );
+    args.push( "--noprealloc" );
+    args.push( "--smallfiles" );
+    if (!this.options_.no_bind) {
+      args.push( "--bind_ip" );
+      args.push( "127.0.0.1" );
+    }
+    if ( this.extraArgs_ ) {
+        args = args.concat( this.extraArgs_ );
+    }
+    removeFile( this.dbpath_ + "/mongod.lock" );
+    if ( reuseData ) {
+        return MongoRunner.runMongod( args, false );
+    } else {
+        return MongoRunner.runMongod( args, true );
+    }
+}
 
+/**
+ * DEPRECATED
+ *
+ * Do not use MongodRunner (note the 'd'). Use MongoRunner.runMongod instead.
+ */ 
+MongodRunner.prototype.port = function() { return this.port_; }
+
+/**
+ * DEPRECATED
+ *
+ * Do not use MongodRunner (note the 'd'). Use MongoRunner.runMongod instead.
+ */ 
+MongodRunner.prototype.toString = function() { return [ this.port_, this.dbpath_, this.peer_, this.arbiter_ ].toString(); }
+
+/**
+ * Called by MongoRunner.runMongoX functions to actually start the processes
+ *
+ * @return a Mongo object connected to the started instance
+ */
+MongoRunner.run = function( argArray, waitForConnect ){
     argArray = appendSetParameterArgs(argArray);
     var port = _parsePort.apply(null, argArray);
     var pid = _startMongoProgram.apply(null, argArray);
@@ -837,6 +964,7 @@ MongoRunner.startWithArgs = function(argArray, waitForConnect) {
     return conn;   
 }
 
+
 /** 
  * DEPRECATED
  * 
@@ -846,63 +974,20 @@ MongoRunner.startWithArgs = function(argArray, waitForConnect) {
  * command line arguments to the program.
  */
 startMongoProgram = function(){
-    var port = _parsePort.apply( null, arguments );
-
     // Enable test commands.
     // TODO: Make this work better with multi-version testing so that we can support
     // enabling this on 2.4 when testing 2.6
     var args = argumentsToArray( arguments );
-    args = appendSetParameterArgs(args);
-    var pid = _startMongoProgram.apply( null, args );
-
-    var m;
-    assert.soon
-    ( function() {
-        try {
-            m = new Mongo( "127.0.0.1:" + port );
-            return true;
-        } catch( e ) {
-            if (!checkProgram(pid)) {
-                
-                print("Could not start mongo program at " + port + ", process ended")
-                
-                // Break out
-                m = null;
-                return true;
-            }
-        }
-        return false;
-    }, "unable to connect to mongo program on port " + port, 600 * 1000 );
-
-    return m;
+    return MongoRunner.run( args, true )
 }
 
-runMongoProgram = function() {
-    var args = argumentsToArray( arguments );
-    var progName = args[0];
-
-    if ( jsTestOptions().auth ) {
-        args = args.slice(1);
-        args.unshift( progName,
-                      '-u', jsTestOptions().authUser,
-                      '-p', jsTestOptions().authPassword,
-                      '--authenticationMechanism', DB.prototype._defaultAuthenticationMechanism,
-                      '--authenticationDatabase=admin'
-                    );
-    }
-
-    if (progName == 'mongo' && !_useWriteCommandsDefault()) {
-        progName = args[0];
-        args = args.slice(1);
-        args.unshift(progName, '--useLegacyWriteOps');
-    }
-
-    return _runMongoProgram.apply( null, args );
-}
-
-// Start a mongo program instance.  This function's first argument is the
-// program name, and subsequent arguments to this function are passed as
-// command line arguments to the program.  Returns pid of the spawned program.
+/**
+ * DEPRECATED
+ *
+ * Start a mongo program instance.  This function's first argument is the
+ * program name, and subsequent arguments to this function are passed as
+ * command line arguments to the program.  Returns pid of the spawned program.
+ */
 startMongoProgramNoConnect = function() {
     var args = argumentsToArray( arguments );
     var progName = args[0];
@@ -921,7 +1006,7 @@ startMongoProgramNoConnect = function() {
         args.unshift(progName, '--useLegacyWriteOps');
     }
 
-    return _startMongoProgram.apply( null, args );
+    MongoRunner.run( args, false );
 }
 
 myPort = function() {
