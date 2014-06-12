@@ -10,7 +10,7 @@ resetDbpath(dbpath);
 mkdir(external_scratch_dir);
 
 // Password is correct
-md = startMongod("--nopreallocj",
+md = startMongodEmpty("--nopreallocj",
                  "--port", port, 
                  "--dbpath", dbpath, 
                  "--sslMode","requireSSL",

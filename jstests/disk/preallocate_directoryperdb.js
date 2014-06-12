@@ -19,7 +19,7 @@ function checkDb2DirAbsent() {
     }    
 }
 
-var m = startMongod( "--smallfiles", "--directoryperdb", "--port", port, "--dbpath", dbpath, "--nohttpinterface", "--bind_ip", "127.0.0.1" );
+var m = startMongodEmpty( "--smallfiles", "--directoryperdb", "--port", port, "--dbpath", dbpath, "--nohttpinterface", "--bind_ip", "127.0.0.1" );
 db = m.getDB( baseName );
 db2 = m.getDB( baseName2 );
 var bulk = db[ baseName ].initializeUnorderedBulkOp();

@@ -13,7 +13,7 @@ ports = allocatePorts( 2 );
 // make sure writing is allowed when started without --auth enabled
 
 port = ports[ 0 ];
-dbms = startMongod( "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface", "--bind_ip", "127.0.0.1" );
+dbms = startMongodEmpty( "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface", "--bind_ip", "127.0.0.1" );
 var d = dbms.getDB( dbName );
 var t = d[ baseName ];
 

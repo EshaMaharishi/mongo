@@ -35,7 +35,7 @@ var doTest = function() {
     var baseName = 'getmore_performance';
     var dbpath = MongoRunner.dataDir + '/sconsTests/' + baseName
     var port = allocatePorts( 1 )[ 0 ];
-    var mongod = startMongod( '--port', port, '--dbpath', dbpath );
+    var mongod = startMongodEmpty( '--port', port, '--dbpath', dbpath );
     sleep(50);
     var testDB = new Mongo('localhost:' + port).getDB(baseName);
     testDB.dropDatabase();

@@ -3,7 +3,7 @@ var port = allocatePorts( 1 )[ 0 ];
 var baseName = "filesize";
 
 // Start mongod with --smallfiles
-var m = startMongod(
+var m = startMongodEmpty(
     "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface",
     "--bind_ip", "127.0.0.1" , "--nojournal" , "--smallfiles" );
 

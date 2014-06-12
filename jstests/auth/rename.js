@@ -3,7 +3,7 @@
 port = allocatePorts( 1 )[ 0 ];
 
 baseName = "jstests_rename_auth";
-m = startMongod( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface" );
+m = startMongodEmpty( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface" );
 
 db1 = m.getDB( baseName )
 db2 = m.getDB( baseName + '_other' )

@@ -3,7 +3,7 @@
 port = allocatePorts( 1 )[ 0 ];
 baseName = "jstests_auth_auth2";
 
-m = startMongod( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface", "--bind_ip", "127.0.0.1", "--nojournal", "--smallfiles" );
+m = startMongodEmpty( "--auth", "--port", port, "--dbpath", MongoRunner.dataPath + baseName, "--nohttpinterface", "--bind_ip", "127.0.0.1", "--nojournal", "--smallfiles" );
 db = m.getDB( "admin" );
 
 // These statements throw because the localhost exception does not allow
