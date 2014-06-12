@@ -4,7 +4,8 @@
 /**
  * Called by MongoRunner.runMongoX functions to actually start the processes
  *
- * @return a Mongo object connected to the started instance
+ * if waitForConnect true,
+ *  @return a Mongo object connected to the started instance
  */
 MongoRunner.run = function( argArray, waitForConnect ){
     argArray = appendSetParameterArgs(argArray);
@@ -19,10 +20,7 @@ MongoRunner.run = function( argArray, waitForConnect ){
                 return true;
             } catch( e ) {
                 if (!checkProgram(pid)) {
-                    
-                    print("Could not start mongo program at " + port + ", process ended")
-                    
-                    // Break out
+                    print("Could not start program at " + port + ", process ended")
                     return true;
                 }
             }
@@ -30,7 +28,11 @@ MongoRunner.run = function( argArray, waitForConnect ){
         }, "unable to connect to mongo program on port " + port, 600 * 1000);
     }
 
-    return conn;   
+    var ret = new Object();
+    ret["conn"] = conn;
+    ret["pid"] = pid;
+
+    return ret;   
 }
 
 /**

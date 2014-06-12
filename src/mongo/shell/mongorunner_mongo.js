@@ -1,6 +1,24 @@
 // Wrap whole file in a function to avoid polluting the global namespace
 (function() {
 
+MongoRunner.runMongo = function(){
+    var args = argumentsToArray( arguments );
+    var progName = args[0];
+
+    if ( jsTestOptions().auth ) {
+        args = args.slice(1);
+        args.unshift(progName,
+                     '-u', jsTestOptions().authUser,
+                     '-p', jsTestOptions().authPassword,
+                     '--authenticationMechanism', DB.prototype._defaultAuthenticationMechanism,
+                     '--authenticationDatabase=admin');
+    }
+
+    if (!_useWriteCommandsDefault())
+        args.unshift("mongo", '--useLegacyWriteOps');
+
+    MongoRunner.run( args, false );
+}
 
 MongoRunner.mongoOptions = function( opts ){
 
@@ -86,7 +104,7 @@ MongoRunner.mongoOptions = function( opts ){
 /**
  * DEPRECATED
  *
- * Use one of the MongoRunner.runMongoX (ie, MongoRunner.runMongod) functions instead.
+ * Use one of the MongoRunner.runMongoX (ie, MongoRunner.runMongo) functions instead.
  *
  * Start a mongo program instance.  This function's first argument is the
  * program name, and subsequent arguments to this function are passed as
@@ -112,6 +130,5 @@ startMongoProgramNoConnect = function() {
 
     MongoRunner.run( args, false );
 }
-
 
 }());

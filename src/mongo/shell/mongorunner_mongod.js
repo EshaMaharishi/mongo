@@ -52,28 +52,25 @@ MongoRunner.runMongod = function ( opts, resetDbPath ){
         }
 
         // convert options object into an array of command line arguments to mongod
+        // prepends binary name to array
         opts = MongoRunner.arrOptions( "mongod", opts )
-        print( "was object" );
     }
 
     opts = appendSetParameterArgs( opts );
 
     var port = _parsePort.apply(null, opts );
-    var ret = MongoRunner.run( opts, port, waitForConnect );
-    var mongod = ret["conn"];
+    var mongod = MongoRunner.run( opts, port, waitForConnect )["conn"];
 
-    if (!waitForConnect) mongos = {};
-    if (!mongod) return null;
-
-    mongod.commandLine = MongoRunner.arrToOpts( opts )
-    mongod.name = (useHostName ? getHostName() : "localhost") + ":" + mongod.commandLine.port
-    mongod.host = mongod.name
-    mongod.port = parseInt( mongod.commandLine.port )
-    mongod.runId = runId || ObjectId()
-    mongod.savedOptions = MongoRunner.savedOptions[ mongod.runId ];
-    mongod.fullOptions = fullOptions;
-
-    return mongod
+    if( waitForConnect ){
+        mongod.commandLine = MongoRunner.arrToOpts( opts );
+        mongod.name = (useHostName ? getHostName() : "localhost") + ":" + mongod.commandLine.port;
+        mongod.host = mongod.name;
+        mongod.port = parseInt( mongod.commandLine.port );
+        mongod.runId = runId || ObjectId();
+        mongod.savedOptions = MongoRunner.savedOptions[ mongod.runId ];
+        mongod.fullOptions = fullOptions;
+    }
+    return mongod;
 }
 
 /**
@@ -144,7 +141,7 @@ MongoRunner.mongodOptions = function( opts ){
 
 
 // The following deprecated functions for creating a mongod instance
-// have all been rerouted to call MongoRunner.runMongod
+// have all been rewritten to call MongoRunner.runMongod
 
 /**
  * DEPRECATED
