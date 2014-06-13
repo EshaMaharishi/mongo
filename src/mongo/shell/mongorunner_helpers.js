@@ -345,7 +345,7 @@ MongoRunner.arrToOpts = function( arr ){
         if( arr[i].startsWith( "-" ) ){
             var opt = arr[i].replace( /^-/, "" ).replace( /^-/, "" )
 
-            if( arr.length > i + 1 && ! arr[ i + 1 ].startsWith( "-" ) ){
+            if( arr.length > i + 1 && ! ("" + arr[ i + 1 ]).startsWith( "-" ) ){
                 opts[ opt ] = arr[ i + 1 ]
                 i++
             }
@@ -365,7 +365,7 @@ MongoRunner.arrToOpts = function( arr ){
 /**
  * Returns a new argArray with any test-specific arguments added.
  */
-function appendSetParameterArgs(argArray) {
+appendSetParameterArgs = function (argArray) {
     var programName = argArray[0];
     if (programName.endsWith('mongod') || programName.endsWith('mongos')) {
         if (jsTest.options().enableTestCommands) {

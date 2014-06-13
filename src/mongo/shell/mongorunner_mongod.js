@@ -30,11 +30,14 @@ MongoRunner.runMongod = function ( opts, resetDbPath ){
     var fullOptions = opts;
 
     if( opts instanceof Array ){
+        printjson( opts );
         if( resetDbPath ){
             var dbpath = _parsePath.apply(null, opts);
             print( "Resetting db path '" + dbpath + "'" )
-            resetDbPath( dbpath );
+            resetDbpath( dbpath );
         }
+        if( opts[0] != "mongod" )
+            opts.unshift("mongod");
     }
     else if( isObject( opts ) ) {
 
@@ -152,7 +155,9 @@ MongoRunner.mongodOptions = function( opts ){
  * var conn = startMongodEmpty("--port", 30000, "--dbpath", "asdf");
  */
 startMongodEmpty = function () {
-    return MongoRunner.runMongod( arguments, true );
+    var args = createMongoArgs( "mongod", arguments );
+    args = args.slice(1); // remove "mongod" from head since it is added in MongoRunner.runMongod
+    return MongoRunner.runMongod( args, true );
 }
 
 /**
@@ -161,7 +166,9 @@ startMongodEmpty = function () {
  * wipes data directory before starting
  */
 startMongod = function () {
-    return MongoRunner.runMongod( arguments, true );
+    var args = createMongoArgs( "mongod", arguments );
+    args = args.slice(1); // remove "mongod" from head since it is added in MongoRunner.runMongod
+    return MongoRunner.runMongod( args, true );
 }
 
 /**
@@ -170,7 +177,9 @@ startMongod = function () {
  * does not wipe data directory before starting
  */
 startMongodNoReset = function(){
-    return MongoRunner.runMongod( arguments, false );
+    var args = createMongoArgs( "mongod", arguments );
+    args = args.slice(1); // remove "mongod" from head since it is added in MongoRunner.runMongod
+    return MongoRunner.runMongod( args, false );
 }
 
 /**
