@@ -9,11 +9,15 @@
  */
 MongoRunner.run = function( argArray, waitForConnect ){
     argArray = appendSetParameterArgs(argArray);
-    var port = _parsePort.apply(null, argArray);
+    var uses_port = argArray[0] == "mongod" || argArray[0] == "mongos";
+
+    if( uses_port )
+        var port = _parsePort.apply(null, argArray);
+
     var pid = _startMongoProgram.apply(null, argArray);
 
     var conn = null;
-    if (waitForConnect) {
+    if (uses_port && waitForConnect) {
         assert.soon( function() {
             try {
                 conn = new Mongo("127.0.0.1:" + port);
