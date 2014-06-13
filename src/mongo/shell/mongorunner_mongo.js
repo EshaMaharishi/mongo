@@ -128,7 +128,7 @@ startMongoProgramNoConnect = function() {
         args.unshift(progName, '--useLegacyWriteOps');
     }
 
-    MongoRunner.run( args, false );
+    return MongoRunner.run( args, false )["pid"];
 }
 
 }());
