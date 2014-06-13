@@ -46,7 +46,12 @@
 namespace mongo {
 
     namespace JSFiles {
-        extern const JSFile servers;
+        extern const JSFile mongorunner_helpers;
+        extern const JSFile mongorunner;
+        extern const JSFile mongorunner_mongo;
+        extern const JSFile mongorunner_mongod;
+        extern const JSFile mongorunner_mongos;
+        extern const JSFile mongorunner_mongotool;
         extern const JSFile mongodtest;
         extern const JSFile shardingtest;
         extern const JSFile servers_misc;
@@ -221,7 +226,12 @@ namespace mongo {
             scope.injectNative("_writeMode", writeMode);
             scope.externalSetup();
             mongo::shell_utils::installShellUtils( scope );
-            scope.execSetup(JSFiles::servers);
+            scope.execSetup(JSFiles::mongorunner_helpers);
+            scope.execSetup(JSFiles::mongorunner);
+            scope.execSetup(JSFiles::mongorunner_mongo);
+            scope.execSetup(JSFiles::mongorunner_mongod);
+            scope.execSetup(JSFiles::mongorunner_mongos);
+            scope.execSetup(JSFiles::mongorunner_mongotool);
             scope.execSetup(JSFiles::mongodtest);
             scope.execSetup(JSFiles::shardingtest);
             scope.execSetup(JSFiles::servers_misc);
