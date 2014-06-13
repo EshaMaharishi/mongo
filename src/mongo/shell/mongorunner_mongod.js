@@ -266,7 +266,7 @@ startMongoProgram = function(){
     // TODO: Make this work better with multi-version testing so that we can support
     // enabling this on 2.4 when testing 2.6
     var args = argumentsToArray( arguments );
-    return MongoRunner.run( args, true )
+    return MongoRunner.run( args, true )["conn"];
 }
 
 
