@@ -205,8 +205,6 @@ DBQuery.prototype.count = function( applySkipLimit ) {
             cmd.skip = this._skip;
     }
 
-    printjson( cmd );
-
     var res = this._db.runCommand( cmd );
     if( res && res.n != null ) return res.n;
     throw Error( "count failed: " + tojson( res ) );

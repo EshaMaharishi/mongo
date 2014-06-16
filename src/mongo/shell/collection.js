@@ -1565,9 +1565,9 @@ PlanCache.prototype._parseQueryShape = function(query, projection, sort) {
             throw new Error("cannot pass DBQuery with sort");
         }
 
-        var queryObj = query._query["query"] || {}
+        var queryObj = query._query["query"] || query._query["$query"] || {}
         projection = query._fields || {};
-        sort = query._query["orderby"] || {};
+        sort = query._query["orderby"] || query._query["$orderby"] || {};
         // Overwrite DBQuery with the BSON query.
         query = queryObj;
     }
