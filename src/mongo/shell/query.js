@@ -63,13 +63,34 @@ DBQuery.prototype.clone = function(){
     return q;
 }
 
-DBQuery.prototype._ensureSpecial = function(){
-    if ( this._special )
-        return;
+
+DBQuery.prototype._ensureSpecial = function() {
+    if (this._special)
+        return this;
+
+    var query = this._query;
+
+    // Set special flag if the query doc starts with $query/query --
+    // This is common when copied from the output of the log or query profiler
+    // or when running explain(), count(), sort(), etc on a query
+    this._special = query && (query["$query"] || query["query"]) ? true : false;
     
-    var n = { query : this._query };
-    this._query = n;
+    if( this._special && query ){
+        var new_query = new Object();
+        var query_string = query["$query"] ? "$query" : "query";
+        new_query[ "$query" ] = query[ query_string ];
+        for( f in query ){
+            if( f != query_string )
+                new_query[ f ] = query[ f ];
+        }
+        this._query = new_query;
+    }
+    else{
+        this._query = { "$query" : query };
+    }
     this._special = true;
+
+    return this;
 }
 
 DBQuery.prototype._checkModify = function(){
@@ -165,18 +186,14 @@ DBQuery.prototype.toArray = function(){
 
 DBQuery.prototype.count = function( applySkipLimit ) {
     var cmd = { count: this._collection.getName() };
+    this._ensureSpecial();
     if ( this._query ) {
-        if ( this._special ) {
-            cmd.query = this._query.query;
-            if ( this._query.$maxTimeMS ) {
-                cmd.maxTimeMS = this._query.$maxTimeMS;
-            }
-            if ( this._query.$hint ) {
-                cmd.hint = this._query.$hint;
-            }
+        cmd.query = this._query.query;
+        if ( this._query.$maxTimeMS ) {
+            cmd.maxTimeMS = this._query.$maxTimeMS;
         }
-        else {
-            cmd.query = this._query;
+        if ( this._query.$hint ) {
+            cmd.hint = this._query.$hint;
         }
     }
     cmd.fields = this._fields || {};

@@ -99,7 +99,7 @@ var testReadPreference = function(conn, hostList, isMongos, mode, tagSets, secEx
     };
 
     // Test command that can be sent to secondary
-    cmdTest({ distinct: 'user', key: { x: 1 }, query: { x: 1 }}, true,
+    cmdTest({ distinct: 'user', key: 'x', query: { x: 1 }}, true,
         formatProfileQuery({ distinct: 'user' }, !isMongos));
 
     // Test command that can't be sent to secondary
