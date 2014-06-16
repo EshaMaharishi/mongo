@@ -46,7 +46,6 @@
 namespace mongo {
 
     namespace JSFiles {
-        extern const JSFile mongorunner_helpers;
         extern const JSFile mongorunner;
         extern const JSFile mongorunner_mongo;
         extern const JSFile mongorunner_mongod;
@@ -226,7 +225,6 @@ namespace mongo {
             scope.injectNative("_writeMode", writeMode);
             scope.externalSetup();
             mongo::shell_utils::installShellUtils( scope );
-            scope.execSetup(JSFiles::mongorunner_helpers);
             scope.execSetup(JSFiles::mongorunner);
             scope.execSetup(JSFiles::mongorunner_mongo);
             scope.execSetup(JSFiles::mongorunner_mongod);

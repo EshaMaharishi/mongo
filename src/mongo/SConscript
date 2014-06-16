@@ -1144,7 +1144,6 @@ env.JSHeader(
 env.JSHeader(
             target="shell/mongo-server.cpp",
             source=[
-                "shell/mongorunner_helpers.js",
                 "shell/mongorunner.js",
                 "shell/mongorunner_mongo.js",
                 "shell/mongorunner_mongod.js",
