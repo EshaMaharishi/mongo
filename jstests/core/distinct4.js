@@ -18,7 +18,7 @@
     assert.throws( t.distinct, [{a:1}] );
 
     // from command interface
-    assert.commandFailedWithCode( t.runCommand( "distinct", { "key" : { a : 1 } } ), 18506 );
+    assert.commandFailedWithCode( t.runCommand( "distinct", { "key" : { a : 1 } } ), 18509 );
 
 
     //second argument should be a document or error
@@ -27,8 +27,14 @@
     assert.throws( t.distinct, ['a', '1'] );
 
     // from command interface
-    assert.commandFailedWithCode( t.runCommand( "distinct", { "key" : "a", "query" : "a" } ), 18507 );
+    assert.commandFailedWithCode( t.runCommand( "distinct", { "key" : "a", "query" : "a" } ), 18510 );
 
+
+
+    // empty query clause should not cause error
+    assert( t.runCommand( "distinct", { "key" : "a" } ) );
+
+    assert( t.distinct, ['a'] );
 
     t.drop();
 

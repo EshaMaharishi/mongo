@@ -1104,7 +1104,7 @@ DBCollection.prototype.distinct = function( keyString , query ){
     if (keyStringType != "string")
         throw Error("The first argument to the distinct command must be a string but was a " + keyStringType);
     queryType = typeof query;
-    if (queryType != "object")
+    if (query != null && queryType != "object")
         throw Error("The query argument to the distinct command must be a document but was a " + queryType);
     var res = this._distinct( keyString , query );
     if ( ! res.ok )
