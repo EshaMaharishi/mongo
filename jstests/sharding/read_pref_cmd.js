@@ -192,7 +192,7 @@ var testBadMode = function(conn, hostList, isMongos, mode, tagSets) {
     } else {
         try {
             // conn should throw error
-            testDB.runCommand({ distinct: 'user', key: 'x' } });
+            testDB.runCommand({ distinct: 'user', key: 'x' });
             failureMsg = "Unexpected success running distinct!";
         }
         catch (e) {
