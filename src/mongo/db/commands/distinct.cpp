@@ -74,13 +74,13 @@ namespace mongo {
             string ns = dbname + '.' + cmdObj.firstElement().valuestr();
 
             // ensure that the key is a string
-            uassert(18506,
+            uassert(18509,
                     mongoutils::str::stream() << "The first argument to the distinct command " <<
                         "must be a string but was a " << typeName(cmdObj["key"].type()),
                     cmdObj["key"].type() == mongo::String);
 
             // ensure that the where clause is a document
-             uassert(18507,
+             uassert(18510,
                     mongoutils::str::stream() << "The query for the distinct command must be a " <<
                         "document but was a " << typeName(cmdObj["query"].type()),
                     cmdObj["query"].type() == mongo::Object);
