@@ -80,11 +80,12 @@ namespace mongo {
                     cmdObj["key"].type() == mongo::String);
 
             // ensure that the where clause is a document
+            if( cmdObj["query"].isNull() == false && cmdObj["query"].eoo() == false ){
              uassert(18510,
                     mongoutils::str::stream() << "The query for the distinct command must be a " <<
                         "document but was a " << typeName(cmdObj["query"].type()),
-                    cmdObj["query"].eoo() == false && cmdObj["query"].isNull() == false &&
-                        cmdObj["query"].type() == mongo::Object);
+                    cmdObj["query"].type() == mongo::Object);
+            }
 
             string key = cmdObj["key"].valuestrsafe();
             BSONObj keyPattern = BSON( key << 1 );
