@@ -188,7 +188,7 @@ DBQuery.prototype.count = function( applySkipLimit ) {
     var cmd = { count: this._collection.getName() };
     this._ensureSpecial();
     if ( this._query ) {
-        cmd.query = this._query.query;
+        cmd.query = this._query.$query || this._query.query;
         if ( this._query.$maxTimeMS ) {
             cmd.maxTimeMS = this._query.$maxTimeMS;
         }
@@ -204,7 +204,9 @@ DBQuery.prototype.count = function( applySkipLimit ) {
         if ( this._skip )
             cmd.skip = this._skip;
     }
-    
+
+    printjson( cmd );
+
     var res = this._db.runCommand( cmd );
     if( res && res.n != null ) return res.n;
     throw Error( "count failed: " + tojson( res ) );
