@@ -36,6 +36,4 @@
 
     assert( t.distinct, ['a'] );
 
-    t.drop();
-
 })();
