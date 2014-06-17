@@ -1140,7 +1140,7 @@ env.JSHeader(
                 "shell/utils_auth.js",
             ])
 
-# if you add a file here, you need to add it in shell/shell_utils.cpp and shell/createCPPfromJavaScriptFiles.js as well
+# if you add a file here, you need to add it in shell/shell_utils.cpp as well
 env.JSHeader(
             target="shell/mongo-server.cpp",
             source=[
