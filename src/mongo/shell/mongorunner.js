@@ -427,16 +427,13 @@ appendSetParameterArgs = function (argArray) {
  *  @return a Mongo object connected to the started instance
  */
 MongoRunner.run = function( argArray, waitForConnect ){
+
     argArray = appendSetParameterArgs(argArray);
-    var uses_port = argArray[0].indexOf("mongod") > -1 || argArray[0].indexOf("mongos") > -1;
-
-    if( uses_port )
-        var port = _parsePort.apply(null, argArray);
-
+    var port = _parsePort.apply(null, argArray);
     var pid = _startMongoProgram.apply(null, argArray);
 
     var conn = null;
-    if (uses_port && waitForConnect) {
+    if (port && waitForConnect) {
         assert.soon( function() {
             try {
                 conn = new Mongo("127.0.0.1:" + port);

@@ -260,11 +260,12 @@ MongodRunner.prototype.toString = function() { return [ this.port_, this.dbpath_
  * This function's first argument is "mongod" or "mongos" program name, \
  * and subsequent arguments to this function are passed as
  * command line arguments to the program.
+ *
+ * // Enable test commands.
+ * // TODO: Make this work better with multi-version testing so that we can support
+ * // enabling this on 2.4 when testing 2.6
  */
 startMongoProgram = function(){
-    // Enable test commands.
-    // TODO: Make this work better with multi-version testing so that we can support
-    // enabling this on 2.4 when testing 2.6
     var args = argumentsToArray( arguments );
     return MongoRunner.run( args, true )["conn"];
 }
