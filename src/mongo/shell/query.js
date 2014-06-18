@@ -74,7 +74,7 @@ DBQuery.prototype._ensureSpecial = function() {
     // This is common when copied from the output of the log or query profiler
     // or when running explain(), count(), sort(), etc on a query
     this._special = query && (query["$query"] || query["query"]) ? true : false;
-    
+
     if( this._special && query ){
         var new_query = new Object();
         var query_string = query["$query"] ? "$query" : "query";

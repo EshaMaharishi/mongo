@@ -1539,9 +1539,20 @@ PlanCache.prototype.help = function () {
  * Internal function to parse query shape.
  */
 PlanCache.prototype._parseQueryShape = function(query, projection, sort) {
+
     if (query == undefined) {
         throw new Error("required parameter query missing");
     }
+
+    // if sort field embedded in query, extract
+    if( sort == undefined && (query["$sort"] || query["sort"]) )
+        sort = query["$sort"] ? query["$sort"] : query["sort"];    
+
+    // if where clause embedded in query, extract
+    if( query["$query"] )
+        query = query["$query"];
+    else if( query["query"] )
+        query = query["query"];
 
     // Accept query shape object as only argument.
     // Query shape contains exactly 3 fields (query, projection and sort)
