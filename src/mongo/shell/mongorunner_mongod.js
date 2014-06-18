@@ -23,8 +23,6 @@
 
 MongoRunner.runMongod = function ( opts, resetDbPath ){
 
-    print("starting runMongod");
-
     opts = opts || {}
     var useHostName = false;
     var runId = null;
@@ -65,9 +63,6 @@ MongoRunner.runMongod = function ( opts, resetDbPath ){
 
     var port = _parsePort.apply(null, opts );
     var mongod = MongoRunner.run( opts, port, waitForConnect )["conn"];
-
-    print("after MongoRunner.run");
-    printjson( mongod );
 
     if( waitForConnect ){
         mongod.commandLine = MongoRunner.arrToOpts( opts );
