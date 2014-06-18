@@ -23,18 +23,16 @@ MongoRunner.runMongos = function( opts ){
 
     var mongos = MongoRunner.run(opts, waitForConnect)["conn"];
 
-    if( !mongos ) 
-        mongos = {}; 
+    if (!waitForConnect) mongos = {};
+    if (!mongos) return null;
 
-    if( mongos ){
-        mongos.commandLine = MongoRunner.arrToOpts( opts )
-        mongos.name = (useHostName ? getHostName() : "localhost") + ":" + mongos.commandLine.port
-        mongos.host = mongos.name
-        mongos.port = parseInt( mongos.commandLine.port )
-        mongos.runId = runId || ObjectId()
-        mongos.savedOptions = MongoRunner.savedOptions[ mongos.runId ]
-        mongos.fullOptions = fullOptions;
-    }
+    mongos.commandLine = MongoRunner.arrToOpts( opts )
+    mongos.name = (useHostName ? getHostName() : "localhost") + ":" + mongos.commandLine.port
+    mongos.host = mongos.name
+    mongos.port = parseInt( mongos.commandLine.port )
+    mongos.runId = runId || ObjectId()
+    mongos.savedOptions = MongoRunner.savedOptions[ mongos.runId ]
+    mongos.fullOptions = fullOptions;
 
     return mongos;
 }
