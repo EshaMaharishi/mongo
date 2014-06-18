@@ -1,6 +1,10 @@
 // Wrap whole file in a function to avoid polluting the global namespace
 (function() {
 
+
+/**
+ * Starts a mongo program instance.
+ */
 MongoRunner.runMongo = function(){
     var args = argumentsToArray( arguments );
     var progName = args[0];
@@ -99,36 +103,6 @@ MongoRunner.mongoOptions = function( opts ){
     opts.pathOpts = Object.merge( opts.pathOpts || {}, { port : "" + opts.port, runId : "" + opts.runId } )
 
     return opts
-}
-
-/**
- * DEPRECATED
- *
- * Use one of the MongoRunner.runMongoX (ie, MongoRunner.runMongo) functions instead.
- *
- * Start a mongo program instance.  This function's first argument is the
- * program name, and subsequent arguments to this function are passed as
- * command line arguments to the program.  Returns pid of the spawned program.
- */
-startMongoProgramNoConnect = function() {
-    var args = argumentsToArray( arguments );
-    var progName = args[0];
-
-    if ( jsTestOptions().auth ) {
-        args = args.slice(1);
-        args.unshift(progName,
-                     '-u', jsTestOptions().authUser,
-                     '-p', jsTestOptions().authPassword,
-                     '--authenticationMechanism', DB.prototype._defaultAuthenticationMechanism,
-                     '--authenticationDatabase=admin');
-    }
-
-    if (progName == 'mongo' && !_useWriteCommandsDefault()) {
-        args = args.slice(1);
-        args.unshift(progName, '--useLegacyWriteOps');
-    }
-
-    return MongoRunner.run( args, false )["pid"];
 }
 
 }());

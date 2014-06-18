@@ -1,6 +1,19 @@
 // Wrap whole file in a function to avoid polluting the global namespace
 (function() {
 
+/**
+ * Starts a mongos instance.
+ *
+ * @param {Object} opts
+ *   {
+ *      @see MongoRunner.mongosOptions for options
+ *   }
+ *
+ * if waitForConnect option set to true,
+ * @return {Mongo} connection object to the started mongos instance.
+ * else
+ * @return null 
+ */
 MongoRunner.runMongos = function( opts ){
 
     opts = opts || {}

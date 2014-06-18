@@ -1,105 +1,7 @@
 // Wrap whole file in a function to avoid polluting the global namespace
 (function() {
 
-_parsePath = function() {
-    var dbpath = "";
-    for( var i = 0; i < arguments.length; ++i )
-        if ( arguments[ i ] == "--dbpath" )
-            dbpath = arguments[ i + 1 ];
-
-    if ( dbpath == "" )
-        throw Error("No dbpath specified");
-
-    return dbpath;
-}
-
-_parsePort = function() {
-    var port = "";
-    for( var i = 0; i < arguments.length; ++i )
-        if ( arguments[ i ] == "--port" )
-            port = arguments[ i + 1 ];
-
-    if ( port == "" )
-        throw Error("No port specified");
-    return port;
-}
-
-myPort = function() {
-    var m = db.getMongo();
-    if ( m.host.match( /:/ ) )
-        return m.host.match( /:(.*)/ )[ 1 ];
-    else
-        return 27017;
-}
-
-connectionURLTheSame = function( a , b ){
-
-    if ( a == b )
-        return true;
-
-    if ( ! a || ! b )
-        return false;
-
-    if( a.host ) return connectionURLTheSame( a.host, b )
-    if( b.host ) return connectionURLTheSame( a, b.host )
-
-    if( a.name ) return connectionURLTheSame( a.name, b )
-    if( b.name ) return connectionURLTheSame( a, b.name )
-
-    if( a.indexOf( "/" ) < 0 && b.indexOf( "/" ) < 0 ){
-        a = a.split( ":" )
-        b = b.split( ":" )
-
-        if( a.length != b.length ) return false
-
-        if( a.length == 2 && a[1] != b[1] ) return false
-
-        if( a[0] == "localhost" || a[0] == "127.0.0.1" ) a[0] = getHostName()
-        if( b[0] == "localhost" || b[0] == "127.0.0.1" ) b[0] = getHostName()
-
-        return a[0] == b[0]
-    }
-    else {
-        var a0 = a.split( "/" )[0]
-        var b0 = b.split( "/" )[0]
-        return a0 == b0
-    }
-}
-
-createMongoArgs = function( binaryName , args ){
-    var fullArgs = [ binaryName ];
-
-    if ( args.length == 1 && isObject( args[0] ) ){
-        var o = args[0];
-        for ( var k in o ){
-          if ( o.hasOwnProperty(k) ){
-            if ( k == "v" && isNumber( o[k] ) ){
-                var n = o[k];
-                if ( n > 0 ){
-                    if ( n > 10 ) n = 10;
-                    var temp = "-";
-                    while ( n-- > 0 ) temp += "v";
-                    fullArgs.push( temp );
-                }
-            }
-            else {
-                fullArgs.push( "--" + k );
-                if ( o[k] != "" )
-                    fullArgs.push( "" + o[k] );
-            }
-          }
-        }
-    }
-    else {
-        for ( var i=0; i<args.length; i++ )
-            fullArgs.push( args[i] )
-    }
-
-    return fullArgs;
-}
-
 MongoRunner = function(){}
-
 MongoRunner.dataDir = "/data/db";
 MongoRunner.dataPath = "/data/db/";
 MongoRunner.usedPortMap = {};
@@ -421,15 +323,24 @@ appendSetParameterArgs = function (argArray) {
 
 
 /**
- * Called by MongoRunner.runMongoX functions to actually start the processes
+ * Called by MongoRunner.runMongoX functions to actually start the processes.
+ * argArray is an array of command line arguments, not including the program name.
+ * Do not call directly.
  *
  * if waitForConnect true,
- *  @return a Mongo object connected to the started instance
+ * @return a Mongo object connected to the started instance
+ * else
+ * @return null
  */
 MongoRunner.run = function( argArray, waitForConnect ){
 
     argArray = appendSetParameterArgs(argArray);
-    var port = _parsePort.apply(null, argArray);
+    var port;
+    try{
+        port = _parsePort.apply(null, argArray);
+    } catch (e){
+        port = null;
+    }
     var pid = _startMongoProgram.apply(null, argArray);
 
     var conn = null;
@@ -527,6 +438,153 @@ MongoRunner.stopMongod = function( port, signal, opts ){
  * Use MongoRunner.stop instead
  */
 MongoRunner.stopMongos = MongoRunner.stop
+
+/**
+ * DEPRECATED
+ *
+ * Start mongod or mongos and return a Mongo() object connected to there.
+ * This function's first argument is "mongod" or "mongos" program name, \
+ * and subsequent arguments to this function are passed as
+ * command line arguments to the program.
+ *
+ * // Enable test commands.
+ * // TODO: Make this work better with multi-version testing so that we can support
+ * // enabling this on 2.4 when testing 2.6
+ */
+startMongoProgram = function(){
+    var args = argumentsToArray( arguments );
+    return MongoRunner.run( args, true )["conn"];
+}
+
+/**
+ * DEPRECATED
+ *
+ * Use one of the MongoRunner.runMongoX (ie, MongoRunner.runMongo) functions instead.
+ *
+ * Start a mongo program instance.  This function's first argument is the
+ * program name, and subsequent arguments to this function are passed as
+ * command line arguments to the program.  Returns pid of the spawned program.
+ */
+startMongoProgramNoConnect = function() {
+    var args = argumentsToArray( arguments );
+    var progName = args[0];
+
+    if ( jsTestOptions().auth ) {
+        args = args.slice(1);
+        args.unshift(progName,
+                     '-u', jsTestOptions().authUser,
+                     '-p', jsTestOptions().authPassword,
+                     '--authenticationMechanism', DB.prototype._defaultAuthenticationMechanism,
+                     '--authenticationDatabase=admin');
+    }
+
+    if (progName == 'mongo' && !_useWriteCommandsDefault()) {
+        args = args.slice(1);
+        args.unshift(progName, '--useLegacyWriteOps');
+    }
+
+    return MongoRunner.run( args, false )["pid"];
+}
+
+
+/************** HELPER FUNCTIONS *************/
+
+_parsePath = function() {
+    var dbpath = "";
+    for( var i = 0; i < arguments.length; ++i )
+        if ( arguments[ i ] == "--dbpath" )
+            dbpath = arguments[ i + 1 ];
+
+    if ( dbpath == "" )
+        throw Error("No dbpath specified");
+
+    return dbpath;
+}
+
+_parsePort = function() {
+    var port = "";
+    for( var i = 0; i < arguments.length; ++i )
+        if ( arguments[ i ] == "--port" )
+            port = arguments[ i + 1 ];
+
+    if ( port == "" )
+        throw Error("No port specified");
+    return port;
+}
+
+myPort = function() {
+    var m = db.getMongo();
+    if ( m.host.match( /:/ ) )
+        return m.host.match( /:(.*)/ )[ 1 ];
+    else
+        return 27017;
+}
+
+connectionURLTheSame = function( a , b ){
+
+    if ( a == b )
+        return true;
+
+    if ( ! a || ! b )
+        return false;
+
+    if( a.host ) return connectionURLTheSame( a.host, b )
+    if( b.host ) return connectionURLTheSame( a, b.host )
+
+    if( a.name ) return connectionURLTheSame( a.name, b )
+    if( b.name ) return connectionURLTheSame( a, b.name )
+
+    if( a.indexOf( "/" ) < 0 && b.indexOf( "/" ) < 0 ){
+        a = a.split( ":" )
+        b = b.split( ":" )
+
+        if( a.length != b.length ) return false
+
+        if( a.length == 2 && a[1] != b[1] ) return false
+
+        if( a[0] == "localhost" || a[0] == "127.0.0.1" ) a[0] = getHostName()
+        if( b[0] == "localhost" || b[0] == "127.0.0.1" ) b[0] = getHostName()
+
+        return a[0] == b[0]
+    }
+    else {
+        var a0 = a.split( "/" )[0]
+        var b0 = b.split( "/" )[0]
+        return a0 == b0
+    }
+}
+
+createMongoArgs = function( binaryName , args ){
+    var fullArgs = [ binaryName ];
+
+    if ( args.length == 1 && isObject( args[0] ) ){
+        var o = args[0];
+        for ( var k in o ){
+          if ( o.hasOwnProperty(k) ){
+            if ( k == "v" && isNumber( o[k] ) ){
+                var n = o[k];
+                if ( n > 0 ){
+                    if ( n > 10 ) n = 10;
+                    var temp = "-";
+                    while ( n-- > 0 ) temp += "v";
+                    fullArgs.push( temp );
+                }
+            }
+            else {
+                fullArgs.push( "--" + k );
+                if ( o[k] != "" )
+                    fullArgs.push( "" + o[k] );
+            }
+          }
+        }
+    }
+    else {
+        for ( var i=0; i<args.length; i++ )
+            fullArgs.push( args[i] )
+    }
+
+    return fullArgs;
+}
 
 
 }());

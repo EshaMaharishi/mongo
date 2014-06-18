@@ -17,7 +17,7 @@ MongoRunner.runMongoTool = function( binaryName, opts ){
 
 // TODO: see if possible to combine codepath with MongoRunner.run
 // which uses _startMongoProgram instead of _runMongoProgram
-// this is only called by MongoRunner.runMongoTool
+// this runMongoProgram function is only called by MongoRunner.runMongoTool
 runMongoProgram = function() {
     var args = argumentsToArray( arguments );
     var progName = args[0];

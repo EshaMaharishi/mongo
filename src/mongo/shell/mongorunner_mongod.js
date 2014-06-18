@@ -20,7 +20,6 @@
  *
  * @return {Mongo} connection object to the started mongod instance.
  */
-
 MongoRunner.runMongod = function ( opts, resetDbPath ){
 
     opts = opts || {}
@@ -141,8 +140,6 @@ MongoRunner.mongodOptions = function( opts ){
 
 
 
-
-
 // The following deprecated functions for creating a mongod instance
 // have all been rewritten to call MongoRunner.runMongod
 
@@ -252,23 +249,5 @@ MongodRunner.prototype.port = function() { return this.port_; }
  * Do not use MongodRunner (note the 'd'). Use MongoRunner.runMongod instead.
  */
 MongodRunner.prototype.toString = function() { return [ this.port_, this.dbpath_, this.peer_, this.arbiter_ ].toString(); }
-
-/**
- * DEPRECATED
- *
- * Start mongod or mongos and return a Mongo() object connected to there.
- * This function's first argument is "mongod" or "mongos" program name, \
- * and subsequent arguments to this function are passed as
- * command line arguments to the program.
- *
- * // Enable test commands.
- * // TODO: Make this work better with multi-version testing so that we can support
- * // enabling this on 2.4 when testing 2.6
- */
-startMongoProgram = function(){
-    var args = argumentsToArray( arguments );
-    return MongoRunner.run( args, true )["conn"];
-}
-
 
 }());
