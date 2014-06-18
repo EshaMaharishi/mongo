@@ -23,6 +23,9 @@ MongoRunner.runMongos = function( opts ){
 
     var mongos = MongoRunner.run(opts, waitForConnect)["conn"];
 
+    if( !mongos ) 
+        mongos = {}; 
+
     if( mongos ){
         mongos.commandLine = MongoRunner.arrToOpts( opts )
         mongos.name = (useHostName ? getHostName() : "localhost") + ":" + mongos.commandLine.port
