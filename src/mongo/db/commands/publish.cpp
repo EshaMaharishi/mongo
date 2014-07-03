@@ -39,7 +39,6 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/instance.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/db/pdfile.h"
 #include "mongo/db/query/get_runner.h"
 #include "mongo/db/query/query_planner_common.h"
 #include "mongo/db/query/type_explain.h"
@@ -64,23 +63,24 @@ namespace mongo {
         }
 
         virtual void help( stringstream &help ) const {
-            help << "{ publish : 'collection name' , channel : "" , message : {} }";
+            help << "{ publish : 'collection name' , key : 'a.b' , query : {} }";
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
                  bool fromRepl ) {
 
+            Timer t;
             string ns = dbname + '.' + cmdObj.firstElement().valuestr();
 
             // ensure that the channel is a string
-            uassert(18525,
-                    mongoutils::str::stream() << "The first (channel) argument to the publish " <<
+            uassert(18527,
+                    mongoutils::str::stream() << "The first (channel) argument to the publish " <<  
                         "command must be a string but was a " << typeName(cmdObj["channel"].type()),
                     cmdObj["channel"].type() == mongo::String);
 
             // ensure that the message is a document
             if( cmdObj["message"].isNull() == false && cmdObj["query"].eoo() == false ){
-             uassert(18526,
+             uassert(18528,
                     mongoutils::str::stream() << "The message for the publish command must be a " <<
                         "document but was a " << typeName(cmdObj["message"].type()),
                     cmdObj["message"].type() == mongo::Object);
@@ -99,7 +99,7 @@ namespace mongo {
             {
                 BSONObjBuilder b;
                 b.append( "channel" , channel );
-                b.appendObject( "message" , message, sizeof(message) );
+                b.append( "message" , message );
                 result.append( "stats" , b.obj() );
             }
 
