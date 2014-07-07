@@ -30,25 +30,26 @@
 
 #include <string>
 #include <vector>
+#include <boost/thread.hpp>
 
 #include "mongo/db/auth/action_set.h"
 #include "mongo/db/auth/action_type.h"
 #include "mongo/db/auth/privilege.h"
-#include "mongo/db/catalog/database.h"
-#include "mongo/db/clientcursor.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/instance.h"
-#include "mongo/db/jsobj.h"
-#include "mongo/db/query/get_runner.h"
-#include "mongo/db/query/query_planner_common.h"
-#include "mongo/db/query/type_explain.h"
-#include "mongo/util/timer.h"
+#include <zmq.hpp>
 
 namespace mongo {
 
     class PublishCommand : public Command {
     public:
-        PublishCommand() : Command("publish") {}
+        PublishCommand() : Command("publish"), zmqcontext(1), pub_socket(zmqcontext, ZMQ_PUB) {
+            printf(">>>>>>>>>>>> IN PUBLISH COMMAND CONSTRUCTOR\n");
+            pub_socket.bind("tcp://*:5555");
+        }
+
+        zmq::context_t zmqcontext;
+        zmq::socket_t pub_socket;
 
         virtual bool slaveOk() const { return false; }
         virtual bool slaveOverrideOk() const { return true; }
@@ -66,11 +67,31 @@ namespace mongo {
             help << "{ publish : 'collection name' , key : 'a.b' , query : {} }";
         }
 
+        static void bgsubthread(void *context) {
+            zmq::context_t *zmqcontext = (zmq::context_t *) context;
+            zmq::socket_t sub_socket(*zmqcontext, ZMQ_SUB);
+            sub_socket.connect("tcp://localhost:5555");
+            sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+
+            void *channel = calloc(500, 1);
+            void *message = calloc(500, 1);
+
+            sub_socket.recv(channel, 500);
+            sub_socket.recv(message, 500);
+
+            BSONObj messageObject((const char *)message);
+
+            printf(">>>> subscribe socket received data. channel: %s, message: %s\n", channel, messageObject.jsonString().c_str());
+
+            free(channel);
+            free(message);
+        }
+
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
                  bool fromRepl ) {
 
-            Timer t;
-            string ns = dbname + '.' + cmdObj.firstElement().valuestr();
+            // Timer t;
+            // string ns = dbname + '.' + cmdObj.firstElement().valuestr();
 
             // ensure that the channel is a string
             uassert(18527,
@@ -86,15 +107,16 @@ namespace mongo {
                     cmdObj["message"].type() == mongo::Object);
             }
 
-            string channel = cmdObj["channel"].valuestrsafe();
+            boost::thread thr(bgsubthread, &zmqcontext);
+            sleep(1);
+
+            string channel = cmdObj["channel"].String();
             BSONObj message = cmdObj["message"].Obj();
 
-            int bufSize = BSONObjMaxUserSize - 4096;
-            BufBuilder bb( bufSize );
+            pub_socket.send(channel.data(), channel.size(), ZMQ_SNDMORE);
+            pub_socket.send(message.objdata(), message.objsize());
 
-            BSONArrayBuilder arr( bb );
-            BSONElementSet values;
-            result.appendArray( "values" , arr.done() );
+            thr.join();
 
             {
                 BSONObjBuilder b;
