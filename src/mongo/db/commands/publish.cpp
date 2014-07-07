@@ -44,7 +44,6 @@ namespace mongo {
     class PublishCommand : public Command {
     public:
         PublishCommand() : Command("publish"), zmqcontext(1), pub_socket(zmqcontext, ZMQ_PUB) {
-            printf(">>>>>>>>>>>> IN PUBLISH COMMAND CONSTRUCTOR\n");
             pub_socket.bind("tcp://*:5555");
         }
 
@@ -73,18 +72,75 @@ namespace mongo {
             sub_socket.connect("tcp://localhost:5555");
             sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 
-            void *channel = calloc(500, 1);
-            void *message = calloc(500, 1);
+            // void *channel = calloc(500, 1);
+            // void *message = calloc(500, 1);
 
-            sub_socket.recv(channel, 500);
-            sub_socket.recv(message, 500);
+            // sub_socket.recv(channel, 500);
+            // sub_socket.recv(message, 500);
 
-            BSONObj messageObject((const char *)message);
+            while( true ){
 
-            printf(">>>> subscribe socket received data. channel: %s, message: %s\n", channel, messageObject.jsonString().c_str());
+                std::map<string, BSONArrayBuilder *> messages;
 
-            free(channel);
-            free(message);
+                zmq::message_t msg;
+                while (sub_socket.recv(&msg, ZMQ_DONTWAIT)) {
+
+                    string channelName = string((char *)msg.data());
+                    cout << "received a message" << endl;
+                    if (messages.find(channelName) == messages.end()) {
+                        cout << "inserting field for new channel" << endl;
+                        messages.insert(std::make_pair(channelName, new BSONArrayBuilder()));
+                    }
+
+                    BSONArrayBuilder *arrayBuilder = messages.find(channelName)->second;
+
+                    msg.rebuild();
+
+                    printf(">>>> receiving second time\n");
+                    sub_socket.recv(&msg);
+
+                    BSONObj messageObject((const char *)msg.data());
+                    arrayBuilder->append(messageObject);
+
+                    msg.rebuild();
+
+                    // message.append("channel", channelName);
+
+                    // // get the body
+                    // invariant(sock.);
+                    // invariant(!msg.more());
+                    // const auto body = BSONElement(static_cast<const char*>(msg.data()));
+                    // invariant(size_t(body.size()) == msg.size());
+                    // invariant(body.fieldNameStringData() == "msg");
+                    // message.append(body);
+                    // msg.rebuild();
+                }
+                
+                // result.append("messages", messages.arr());
+
+                // printf(">>>> subscribe socket received data. channel: %s, message: %s\n", channel, messageObject.jsonString().c_str());
+
+                // free(channel);
+                // free(message);
+
+                if( messages.size() > 0 ){
+                    printf(">>> iterating on map\n");
+
+                    BSONObjBuilder b;
+                    cout << "map length: " << messages.size() << endl;
+                    for (std::map<string, BSONArrayBuilder *>::iterator it = messages.begin(); 
+                         it != messages.end();
+                         ++it) {
+                        cout << it->first << endl;
+                        cout << it->second << endl;
+                        b.append( it->first , it->second->arr() );
+                        // delete(it->second);
+                    }
+
+                    printf(">>>> messages received: %s\n", b.obj().jsonString().c_str());
+                    break;
+                }
+            }
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
@@ -113,7 +169,7 @@ namespace mongo {
             string channel = cmdObj["channel"].String();
             BSONObj message = cmdObj["message"].Obj();
 
-            pub_socket.send(channel.data(), channel.size(), ZMQ_SNDMORE);
+            pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE);
             pub_socket.send(message.objdata(), message.objsize());
 
             thr.join();
