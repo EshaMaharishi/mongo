@@ -1,11 +1,11 @@
-// getMessages.cpp
+// pubsub_poll.cpp
 
 /**
 *    Copyright (C) 2012 10gen Inc.
 *
-*    This program is free software: you can redistribute it and/or  modify
+*    This program is free software: you can redistribute it and/or modify
 *    it under the terms of the GNU Affero General Public License, version 3,
-*    as getMessagesed by the Free Software Foundation.
+*    as published by the Free Software Foundation.
 *
 *    This program is distributed in the hope that it will be useful,
 *    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -42,9 +42,9 @@
 
 namespace mongo {
 
-    class GetMessagesCommand : public Command {
+    class PollCommand : public Command {
     public:
-        GetMessagesCommand() : Command("getMessages") {}
+        PollCommand() : Command("poll") {}
 
         virtual bool slaveOk() const { return false; }
         virtual bool slaveOverrideOk() const { return true; }
@@ -59,7 +59,7 @@ namespace mongo {
         }
 
         virtual void help( stringstream &help ) const {
-            help << "{ getMessages : 1 , _id : ObjectID }";
+            help << "{ poll : 1 , _id : ObjectID }";
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
@@ -69,12 +69,20 @@ namespace mongo {
 
             BSONElement boid = cmdObj["sub_id"]; 
             OID oid = boid.OID();
+            long timeout = cmdObj["timeout"].numberInt();
 
             zmq::socket_t *sub_sock = PubSubData::getSubscription( oid );
 
             // TODO: better error handling
             if( sub_sock == NULL )
                 return false;
+
+            //  Initialize poll set
+            zmq::pollitem_t items [] = {
+                { *sub_sock, 0, ZMQ_POLLIN, 0 }
+            };
+
+            zmq::poll(&items[0], 1, timeout);
             
             std::map<string, BSONArrayBuilder *> outbox;
 
@@ -109,6 +117,6 @@ namespace mongo {
             return true;
         }
 
-    } getMessagesCmd;
+    } pollCmd;
 
 }  // namespace mongo

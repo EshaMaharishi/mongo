@@ -1,4 +1,4 @@
-// publish.cpp
+// pubsub_publish.cpp
 
 /**
 *    Copyright (C) 2012 10gen Inc.
