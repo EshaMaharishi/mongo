@@ -52,7 +52,7 @@ namespace mongo {
 
 	        ext_sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 	        ext_sub_socket.connect(SELF_SUB_ENDPOINT.c_str());
-	        // connect to all other mongod's in replSet here
+	        // TODO: connect to all other mongod's in replSet here
 
 	        int_pub_socket.bind(INT_PUBSUB_ENDPOINT);
 

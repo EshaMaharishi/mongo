@@ -66,7 +66,7 @@ namespace mongo {
 
         zmq::socket_t *sub_sock = new zmq::socket_t(zmq_context, ZMQ_SUB);
         sub_sock->connect( INT_PUBSUB_ENDPOINT );
-        sub_sock->setsockopt( ZMQ_SUBSCRIBE, channel, strlen(channel) );
+        sub_sock->setsockopt( ZMQ_SUBSCRIBE, "", 0 );
 
         open_subs.insert( std::make_pair( *oid, sub_sock ) );       
         return *oid;
@@ -75,12 +75,9 @@ namespace mongo {
     // TODO: add a scoped lock around the table access
     zmq::socket_t * PubSubData::getSubscription( OID oid ) { 
         if (open_subs.find( oid ) == open_subs.end()) { 
-            printf("could not find oid\n");
             return NULL;    
         } else {
-            printf("found oid\n");
             zmq::socket_t *sub_sock = open_subs.find( oid )->second; 
-            printf("accessed socket\n");
             return sub_sock;
         } 
     } 

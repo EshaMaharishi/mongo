@@ -44,24 +44,7 @@ namespace mongo {
 
     class PublishCommand : public Command {
     public:
-        PublishCommand() : Command("publish") {
-            boost::thread workerThread(PublishCommand::test_pub_func);
-        }
-
-        static void test_pub_func() {
-            zmq::socket_t test_socket(zmq_context, ZMQ_SUB);
-            test_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-            test_socket.connect(INT_PUBSUB_ENDPOINT);
-            void *buf = calloc(1000, 1);
-            while (true) {
-                test_socket.recv(buf, 1000);
-                printf(">>>> CHANNEL: %s\n", buf);
-                test_socket.recv(buf, 1000);
-                BSONObj message((char *)buf);
-                printf(">>>> MESSAGE: %s\n", message.jsonString().c_str());
-                memset(buf, 0, 1000);
-            }
-        }
+        PublishCommand() : Command("publish") {}
 
         virtual bool slaveOk() const { return false; }
         virtual bool slaveOverrideOk() const { return true; }
@@ -82,10 +65,7 @@ namespace mongo {
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg,
                  BSONObjBuilder& result, bool fromRepl ) {
 
-            // Timer t;
-            // string ns = dbname + '.' + cmdObj.firstElement().valuestr();
-
-            // ensure that the channel is a string
+           // ensure that the channel is a string
             uassert(18527,
                     mongoutils::str::stream() << "The first (channel) argument to the publish " <<  
                         "command must be a string but was a " << typeName(cmdObj["channel"].type()),
@@ -102,15 +82,12 @@ namespace mongo {
             string channel = cmdObj["channel"].String();
             BSONObj message = cmdObj["message"].Obj();
 
-            ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE);
-            ext_pub_socket.send(message.objdata(), message.objsize());
 
-            {
-                BSONObjBuilder b;
-                b.append( "channel" , channel );
-                b.append( "message" , message );
-                result.append( "stats" , b.obj() );
-            }
+            // TODO: return specific error message
+            if( ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE) == (unsigned long)-1 )
+                return false;
+            if( ext_pub_socket.send(message.objdata(), message.objsize()) == (unsigned long)-1 )
+                return false;
 
             return true;
         }

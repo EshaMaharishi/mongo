@@ -62,7 +62,7 @@ namespace mongo {
         }
 
         virtual void help( stringstream &help ) const {
-            help << "{ subscribe : 'collection name' , key : 'a.b' , query : {} }";
+            help << "{ subscribe : 1, channel : 'string' }";
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {

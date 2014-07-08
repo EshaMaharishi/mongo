@@ -35,10 +35,11 @@
 namespace mongo {
 
     extern zmq::context_t zmq_context;
-    extern zmq::socket_t int_pub_socket;
-    extern zmq::socket_t ext_pub_socket;
-    extern zmq::socket_t ext_sub_socket;
+    extern zmq::socket_t int_pub_socket; // publishes to clients
+    extern zmq::socket_t ext_pub_socket; // publishes to the other node(s) in the group
+    extern zmq::socket_t ext_sub_socket; // subscribes to the other node(s) in the group
 
+    // to be included in all files using the client's sub sockets
     extern const char *const INT_PUBSUB_ENDPOINT;
 
 	void proxy(zmq::socket_t *subscriber, zmq::socket_t *publisher);

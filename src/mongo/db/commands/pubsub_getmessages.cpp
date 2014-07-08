@@ -70,53 +70,39 @@ namespace mongo {
             BSONElement boid = cmdObj["sub_id"]; 
             OID oid = boid.OID();
 
-            // check socket out from global table
             zmq::socket_t *sub_sock = PubSubData::getSubscription( oid );
+
+            // TODO: better error handling
             if( sub_sock == NULL )
                 return false;
             
-            std::map<string, BSONArrayBuilder *> messages;
+            std::map<string, BSONArrayBuilder *> outbox;
 
             zmq::message_t msg;
-            while (sub_sock->recv(&msg, ZMQ_DONTWAIT)) {
-
-                printf("reached 1\n\n\n\n");
+            while ( sub_sock->recv(&msg, ZMQ_DONTWAIT)) { 
 
                 string channelName = string((char *)msg.data());
 
-                if (messages.find(channelName) == messages.end()) {
-                    messages.insert(std::make_pair(channelName, new BSONArrayBuilder()));
-                }
-
-                printf("reached 2\n\n\n\n");
-
-                BSONArrayBuilder *arrayBuilder = messages.find(channelName)->second;
+                // if first new message on this channel, add to our outbox
+                if (outbox.find(channelName) == outbox.end())
+                    outbox.insert(std::make_pair(channelName, new BSONArrayBuilder()));
+                BSONArrayBuilder *arrayBuilder = outbox.find(channelName)->second;
 
                 msg.rebuild();
-
                 sub_sock->recv(&msg);
-
-                printf("reached 3\n\n\n\n");
 
                 BSONObj messageObject((const char *)msg.data());
                 arrayBuilder->append(messageObject);
-
-                printf("reached 4\n\n\n\n");
 
                 msg.rebuild();
             }
 
             BSONObjBuilder b;    
-
-            if (messages.size() > 0) {
-                printf(">>>> map length: %lu\n", messages.size());
-                for (std::map<string, BSONArrayBuilder *>::iterator it = messages.begin(); 
-                     it != messages.end();
-                     ++it) {
-                    b.append(it->first , it->second->arr());
-                    delete(it->second);
-                }
-                printf(">>>> messages found: %s\n", b.obj().jsonString().c_str());
+            for (std::map<string, BSONArrayBuilder *>::iterator it = outbox.begin(); 
+                 it != outbox.end();
+                 ++it) {
+                b.append(it->first , it->second->arr());
+                delete(it->second);
             }
 
             result.append( "messages" , b.obj() );
