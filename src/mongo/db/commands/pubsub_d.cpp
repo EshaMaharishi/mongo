@@ -38,9 +38,6 @@
 
 namespace mongo {
 	namespace {
-		void proxy(zmq::socket_t subscriber, zmq::socket_t publisher) {
-			zmq::proxy(subscriber, publisher, NULL);
-		}
 
 	    MONGO_INITIALIZER_WITH_PREREQUISITES(SetupPubSubSockets, MONGO_NO_PREREQUISITES)
 	                                        (InitializerContext* context) {
@@ -48,18 +45,18 @@ namespace mongo {
 	    	const int port = serverGlobalParams.port;
 	        const std::string EXT_PUB_ENDPOINT = str::stream() << "tcp://*:" << (port + 2000);
 	        const std::string SELF_SUB_ENDPOINT = str::stream() << "tcp://localhost:" << (port + 2000);
-	        // send endpoint to config server here if necessary?
+
+			// send endpoint to config server here if necessary?
+
 	    	ext_pub_socket.bind(EXT_PUB_ENDPOINT.c_str());
 
-	        zmq::socket_t ext_sub_socket(zmq_context, ZMQ_SUB);
 	        ext_sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
 	        ext_sub_socket.connect(SELF_SUB_ENDPOINT.c_str());
 	        // connect to all other mongod's in replSet here
 
-	        zmq::socket_t int_pub_socket(zmq_context, ZMQ_PUB);
 	        int_pub_socket.bind(INT_PUBSUB_ENDPOINT);
 
-	        // boost::thread(proxy, ext_sub_socket, int_pub_socket);
+	        boost::thread internal_proxy(proxy, &ext_sub_socket, &int_pub_socket);
 
 	        return Status::OK();
 	    }

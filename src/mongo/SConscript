@@ -682,7 +682,6 @@ serverOnlyFiles = [ "db/curop.cpp",
                     "db/commands/write_commands/write_commands.cpp",
                     "db/commands/write_commands/batch_executor.cpp",
                     "db/commands/pubsub.cpp",
-                    "db/commands/pubsub_d.cpp",
                     "db/commands/pubsub_publish.cpp",
                     "db/commands/pubsub_subscribe.cpp",
                     "db/commands/pubsub_unsubscribe.cpp",
@@ -991,7 +990,7 @@ env.Library("mongodwebserver",
              ],
             LIBDEPS=["coredb", "mongodandmongos"])
 
-mongodOnlyFiles = [ "db/db.cpp", "db/commands/touch.cpp", "db/mongod_options_init.cpp" ]
+mongodOnlyFiles = [ "db/db.cpp", "db/commands/touch.cpp", "db/commands/pubsub_d.cpp", "db/mongod_options_init.cpp" ]
 
 # ----- TARGETS ------
 

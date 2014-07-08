@@ -26,7 +26,7 @@
  *    it in the license file.
  */
 
-// #pragma once
+#pragma once
 
 #include "mongo/bson/oid.h"
 #include "mongo/base/init.h"
@@ -35,8 +35,13 @@
 namespace mongo {
 
     extern zmq::context_t zmq_context;
+    extern zmq::socket_t int_pub_socket;
     extern zmq::socket_t ext_pub_socket;
-    const char *const INT_PUBSUB_ENDPOINT = "inproc://pubsub";
+    extern zmq::socket_t ext_sub_socket;
+
+    extern const char *const INT_PUBSUB_ENDPOINT;
+
+	void proxy(zmq::socket_t *subscriber, zmq::socket_t *publisher);
 
 
     class PubSubData {
@@ -46,7 +51,7 @@ namespace mongo {
         static zmq::socket_t * removeSubscription( OID oid );
 
     private:
-        static std::map< OID, zmq::socket_t *> open_subs;
+        static std::map<OID, zmq::socket_t *> open_subs;
     };
 
 }  // namespace mongo

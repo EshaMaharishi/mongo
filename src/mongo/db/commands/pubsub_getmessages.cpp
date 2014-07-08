@@ -109,7 +109,7 @@ namespace mongo {
             BSONObjBuilder b;    
 
             if (messages.size() > 0) {
-                cout << "map length: " << messages.size() << endl;
+                printf(">>>> map length: %lu\n", messages.size());
                 for (std::map<string, BSONArrayBuilder *>::iterator it = messages.begin(); 
                      it != messages.end();
                      ++it) {
