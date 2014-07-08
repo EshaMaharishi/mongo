@@ -30,11 +30,13 @@
 
 #include <zmq.hpp>
 #include <boost/thread.hpp>
+#include <list>
 
 #include "mongo/db/commands.h"
 #include "mongo/db/server_options.h"
 #include "mongo/base/init.h"
 #include "mongo/db/commands/pubsub.h"
+#include "mongo/db/repl/rs.h"
 
 namespace mongo {
 	namespace {
@@ -43,16 +45,10 @@ namespace mongo {
 	                                        (InitializerContext* context) {
 
 	    	const int port = serverGlobalParams.port;
-	        const std::string EXT_PUB_ENDPOINT = str::stream() << "tcp://*:" << (port + 2000);
-	        const std::string SELF_SUB_ENDPOINT = str::stream() << "tcp://localhost:" << (port + 2000);
+	        const std::string EXT_SUB_ENDPOINT = str::stream() << "tcp://*:" << (port + 2000);
 
-			// send endpoint to config server here if necessary?
-
-	    	ext_pub_socket.bind(EXT_PUB_ENDPOINT.c_str());
-
+	        ext_sub_socket.bind(EXT_SUB_ENDPOINT.c_str());
 	        ext_sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-	        ext_sub_socket.connect(SELF_SUB_ENDPOINT.c_str());
-	        // TODO: connect to all other mongod's in replSet here
 
 	        int_pub_socket.bind(INT_PUBSUB_ENDPOINT);
 

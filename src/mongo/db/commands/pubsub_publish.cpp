@@ -82,12 +82,30 @@ namespace mongo {
             string channel = cmdObj["channel"].String();
             BSONObj message = cmdObj["message"].Obj();
 
+            std::list<HostAndPort> members;
+
+            if (repl::theReplSet) {
+                members = repl::theReplSet->config().otherMemberHostnames();
+            }
+
+            members.push_back(HostAndPort::me());
+
+            for (std::list<HostAndPort>::iterator it = members.begin(); it != members.end(); ++it) {
+                std::string endpoint = str::stream() << "tcp://" << it->host() << ":" << (it->port() + 2000);
+                ext_pub_socket.connect(endpoint.c_str());
+            }
+
             uassert(18529, "ZeroMQ failed to publish channel name to pub socket.",
                         ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE) 
                         != (unsigned long)(-1) );
             uassert(18530, "ZeroMQ failed to publish message body to pub socket.",
                         ext_pub_socket.send(message.objdata(), message.objsize()) 
                         != (unsigned long)(-1) ); 
+
+            for (std::list<HostAndPort>::iterator it = members.begin(); it != members.end(); ++it) {
+                std::string endpoint = str::stream() << "tcp://" << it->host() << ":" << (it->port() + 2000);
+                ext_pub_socket.disconnect(endpoint.c_str());
+            }
 
             return true;
         }
