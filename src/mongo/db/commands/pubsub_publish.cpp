@@ -82,11 +82,10 @@ namespace mongo {
             string channel = cmdObj["channel"].String();
             BSONObj message = cmdObj["message"].Obj();
 
-
-            // TODO: return specific error message
-            if( ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE) == (unsigned long)-1 )
+            // TODO: return specific error messages
+            if( ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE) == (unsigned long)(-1) )
                 return false;
-            if( ext_pub_socket.send(message.objdata(), message.objsize()) == (unsigned long)-1 )
+            if( ext_pub_socket.send(message.objdata(), message.objsize()) == (unsigned long)(-1) )
                 return false;
 
             return true;
