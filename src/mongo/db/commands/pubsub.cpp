@@ -54,7 +54,7 @@ namespace mongo {
      *
      * The map is wrapped in a class to facilitate clean (multi-threaded) access
      * to the table from subscribe (to add entries), unsubscribe (to remove entries),
-     * and getMessages (to access entries) without exposing any locking mechanisms
+     * and poll (to access entries) without exposing any locking mechanisms
      * to the user.
      */
 
@@ -74,7 +74,7 @@ namespace mongo {
     } 
 
     // TODO: add a scoped lock around the table access
-    zmq::socket_t * PubSubData::getSubscription( OID oid ) { 
+    zmq::socket_t *PubSubData::getSubscription( OID oid ) { 
         if (open_subs.find( oid ) == open_subs.end()) { 
             return NULL;    
         } else {
@@ -98,7 +98,5 @@ namespace mongo {
             return 0;
         } 
     } 
-
-
 
 }  // namespace mongo
