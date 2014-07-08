@@ -44,7 +44,24 @@ namespace mongo {
 
     class PublishCommand : public Command {
     public:
-        PublishCommand() : Command("publish") {}
+        PublishCommand() : Command("publish") {
+            boost::thread workerThread(PublishCommand::test_pub_func);
+        }
+
+        static void test_pub_func() {
+            zmq::socket_t test_socket(zmq_context, ZMQ_SUB);
+            test_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
+            test_socket.connect(INT_PUBSUB_ENDPOINT);
+            void *buf = calloc(1000, 1);
+            while (true) {
+                test_socket.recv(buf, 1000);
+                printf(">>>> CHANNEL: %s\n", buf);
+                test_socket.recv(buf, 1000);
+                BSONObj message((char *)buf);
+                printf(">>>> MESSAGE: %s\n", message.jsonString().c_str());
+                memset(buf, 0, 1000);
+            }
+        }
 
         virtual bool slaveOk() const { return false; }
         virtual bool slaveOverrideOk() const { return true; }
@@ -94,8 +111,6 @@ namespace mongo {
                 b.append( "message" , message );
                 result.append( "stats" , b.obj() );
             }
-
-            printf(">>>> here\n");
 
             return true;
         }

@@ -39,7 +39,7 @@ namespace mongo {
     extern zmq::socket_t ext_pub_socket;
     extern zmq::socket_t ext_sub_socket;
 
-    const char *const INT_PUBSUB_ENDPOINT = "inproc://pubsub";
+    extern const char *const INT_PUBSUB_ENDPOINT;
 
 	void proxy(zmq::socket_t *subscriber, zmq::socket_t *publisher);
 

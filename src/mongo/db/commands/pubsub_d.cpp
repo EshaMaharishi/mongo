@@ -45,7 +45,9 @@ namespace mongo {
 	    	const int port = serverGlobalParams.port;
 	        const std::string EXT_PUB_ENDPOINT = str::stream() << "tcp://*:" << (port + 2000);
 	        const std::string SELF_SUB_ENDPOINT = str::stream() << "tcp://localhost:" << (port + 2000);
-	        // send endpoint to config server here if necessary?
+
+			// send endpoint to config server here if necessary?
+
 	    	ext_pub_socket.bind(EXT_PUB_ENDPOINT.c_str());
 
 	        ext_sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
@@ -54,7 +56,7 @@ namespace mongo {
 
 	        int_pub_socket.bind(INT_PUBSUB_ENDPOINT);
 
-	        boost::thread(proxy, &ext_sub_socket, &int_pub_socket);
+	        boost::thread internal_proxy(proxy, &ext_sub_socket, &int_pub_socket);
 
 	        return Status::OK();
 	    }
