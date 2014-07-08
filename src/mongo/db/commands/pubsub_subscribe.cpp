@@ -67,7 +67,10 @@ namespace mongo {
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
 
-            // TODO: do input validation
+            // ensure that the channel is a string
+            uassert(18531, mongoutils::str::stream() << "The channel argument to the subscribe " <<
+                    "command must be a string but was a " << typeName(cmdObj["channel"].type()),
+                    cmdObj["channel"].type() == mongo::String);
 
             // TODO: add secure access to this channel?
             // perhaps return an <oid, key> pair?
@@ -78,6 +81,7 @@ namespace mongo {
 
             return true;
         }
+        
     } subscribeCmd;
 
 }  // namespace mongo

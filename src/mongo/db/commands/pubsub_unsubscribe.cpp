@@ -64,17 +64,21 @@ namespace mongo {
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
 
-            // TODO: do input validation
+            // ensure that the channel is a string
+            uassert(18532, mongoutils::str::stream() << "The sub_id argument to the unsubscribe " <<
+                    "command must be an ObjectId but was a " << typeName(cmdObj["sub_id"].type()),
+                    cmdObj["sub_id"].type() == jstOID);
 
             BSONElement boid = cmdObj["sub_id"];
             OID oid = boid.OID();
 
-            // TODO: better error handling
-            if( PubSubData::removeSubscription( oid ) ) 
-                return false;
+            uassert(18535,
+                    mongoutils::str::stream() << "Failed to remove subscription",
+                    !PubSubData::removeSubscription( oid ));
 
             return true;
         }
+
     } unsubscribeCmd;
 
 }  // namespace mongo
