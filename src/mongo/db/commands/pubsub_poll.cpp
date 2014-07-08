@@ -59,7 +59,7 @@ namespace mongo {
         }
 
         virtual void help( stringstream &help ) const {
-            help << "{ poll : 1 , _id : ObjectID }";
+            help << "{ poll : 1 , sub_id : ObjectID, timeout : <milliseconds> }";
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
