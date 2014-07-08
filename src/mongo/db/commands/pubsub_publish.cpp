@@ -82,11 +82,12 @@ namespace mongo {
             string channel = cmdObj["channel"].String();
             BSONObj message = cmdObj["message"].Obj();
 
-            // TODO: return specific error messages
-            if( ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE) == (unsigned long)(-1) )
-                return false;
-            if( ext_pub_socket.send(message.objdata(), message.objsize()) == (unsigned long)(-1) )
-                return false;
+            uassert(18529, "ZeroMQ failed to publish channel name to pub socket.",
+                        ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE) 
+                        != (unsigned long)(-1) );
+            uassert(18530, "ZeroMQ failed to publish message body to pub socket.",
+                        ext_pub_socket.send(message.objdata(), message.objsize()) 
+                        != (unsigned long)(-1) ); 
 
             return true;
         }
