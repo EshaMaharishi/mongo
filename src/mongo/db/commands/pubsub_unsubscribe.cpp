@@ -62,20 +62,16 @@ namespace mongo {
             help << "{ unsubscribe : 'collection name' , key : 'a.b' , query : {} }";
         }
 
-        bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
-                 bool fromRepl ) {
+        bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
 
-            // Timer t;
-            // string ns = dbname + '.' + cmdObj.firstElement().valuestr();
+            // TODO: do input validation
 
-            // do validation
+            BSONElement boid = cmdObj["sub_id"];
+            OID oid = boid.OID();
 
-            {
-                BSONObjBuilder b;
-                // b.append( "channel" , channel );
-                // b.append( "message" , message );
-                result.append( "stats" , b.obj() );
-            }
+            // TODO: better error handling
+            if( PubSubData::removeSubscription( oid ) ) 
+                return false;
 
             return true;
         }

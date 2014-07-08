@@ -62,8 +62,7 @@ namespace mongo {
             help << "{ getMessages : 1 , _id : ObjectID }";
         }
 
-        bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
-                 bool fromRepl ) {
+        bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
 
             // TODO: do input validation
 
@@ -83,7 +82,7 @@ namespace mongo {
 
                 string channelName = string((char *)msg.data());
 
-                // if first new message on this channel, add to our outbox
+                // if first new message on this channel, add channel to our outbox
                 if (outbox.find(channelName) == outbox.end())
                     outbox.insert(std::make_pair(channelName, new BSONArrayBuilder()));
                 BSONArrayBuilder *arrayBuilder = outbox.find(channelName)->second;

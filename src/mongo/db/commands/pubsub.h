@@ -44,12 +44,12 @@ namespace mongo {
 
 	void proxy(zmq::socket_t *subscriber, zmq::socket_t *publisher);
 
-
     class PubSubData {
+
     public:
         static OID addSubscription( const char *channel );
         static zmq::socket_t * getSubscription( OID oid );
-        static zmq::socket_t * removeSubscription( OID oid );
+        static int removeSubscription( OID oid );
 
     private:
         static std::map<OID, zmq::socket_t *> open_subs;

@@ -59,14 +59,13 @@ namespace mongo {
     std::map<OID, zmq::socket_t *> PubSubData::open_subs = std::map<OID, zmq::socket_t *>();
 
     // TODO: add a scoped lock around the table modification
-    // and also around socket creation because of zmq context?
     OID PubSubData::addSubscription( const char *channel ) { 
         OID *oid = new OID();
         oid->init();
 
         zmq::socket_t *sub_sock = new zmq::socket_t(zmq_context, ZMQ_SUB);
         sub_sock->connect( INT_PUBSUB_ENDPOINT );
-        sub_sock->setsockopt( ZMQ_SUBSCRIBE, "", 0 );
+        sub_sock->setsockopt( ZMQ_SUBSCRIBE, channel, 0 );
 
         open_subs.insert( std::make_pair( *oid, sub_sock ) );       
         return *oid;
@@ -77,9 +76,27 @@ namespace mongo {
         if (open_subs.find( oid ) == open_subs.end()) { 
             return NULL;    
         } else {
-            zmq::socket_t *sub_sock = open_subs.find( oid )->second; 
-            return sub_sock;
+            return open_subs.find( oid )->second; 
         } 
     } 
+
+    // TODO: add a scoped lock around the table access
+    int PubSubData::removeSubscription( OID oid ) { 
+        if (open_subs.find( oid ) == open_subs.end()) { 
+            return 1;    
+        } else {
+            std::map<OID, zmq::socket_t *>::iterator it = open_subs.find( oid ); 
+            printf("before deleting oid\n");
+            delete( &(it->first) );
+            it->second->close();
+
+            printf("before deleting socket\n");
+            delete( it->second ); 
+            open_subs.erase( it );
+            return 0;
+        } 
+    } 
+
+
 
 }  // namespace mongo
