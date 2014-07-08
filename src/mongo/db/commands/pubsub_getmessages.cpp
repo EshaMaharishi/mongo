@@ -70,15 +70,50 @@ namespace mongo {
 
             // do validation
 
-            {
-                BSONObjBuilder b;
-                // b.append( "channel" , channel );
-                // b.append( "message" , message );
-                result.append( "stats" , b.obj() );
+            // check socket out from global table
+            zmq::socket_t sub_socket(zmq_context, ZMQ_SUB);
+
+            std::map<string, BSONArrayBuilder *> messages;
+
+            zmq::message_t msg;
+            while (sub_socket.recv(&msg, ZMQ_DONTWAIT)) {
+
+                string channelName = string((char *)msg.data());
+
+                if (messages.find(channelName) == messages.end()) {
+                    messages.insert(std::make_pair(channelName, new BSONArrayBuilder()));
+                }
+
+                BSONArrayBuilder *arrayBuilder = messages.find(channelName)->second;
+
+                msg.rebuild();
+
+                sub_socket.recv(&msg);
+
+                BSONObj messageObject((const char *)msg.data());
+                arrayBuilder->append(messageObject);
+
+                msg.rebuild();
             }
+
+            BSONObjBuilder b;    
+
+            if (messages.size() > 0) {
+                cout << "map length: " << messages.size() << endl;
+                for (std::map<string, BSONArrayBuilder *>::iterator it = messages.begin(); 
+                     it != messages.end();
+                     ++it) {
+                    b.append(it->first , it->second->arr());
+                    delete(it->second);
+                }
+                printf(">>>> messages found: %s\n", b.obj().jsonString().c_str());
+            }
+
+            result.append( "messages" , b.obj() );
 
             return true;
         }
+
     } getMessagesCmd;
 
 }  // namespace mongo
