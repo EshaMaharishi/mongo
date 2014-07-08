@@ -38,17 +38,13 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/instance.h"
 #include <zmq.hpp>
+#include "mongo/db/commands/pubsub.h"
 
 namespace mongo {
 
     class GetMessagesCommand : public Command {
     public:
-        GetMessagesCommand() : Command("getMessages"), zmqcontext(1), pub_socket(zmqcontext, ZMQ_PUB) {
-            pub_socket.bind("tcp://*:5555");
-        }
-
-        zmq::context_t zmqcontext;
-        zmq::socket_t pub_socket;
+        GetMessagesCommand() : Command("getMessages") {}
 
         virtual bool slaveOk() const { return false; }
         virtual bool slaveOverrideOk() const { return true; }
@@ -66,83 +62,6 @@ namespace mongo {
             help << "{ getMessages : 'collection name' , key : 'a.b' , query : {} }";
         }
 
-        static void bgsubthread(void *context) {
-            zmq::context_t *zmqcontext = (zmq::context_t *) context;
-            zmq::socket_t sub_socket(*zmqcontext, ZMQ_SUB);
-            sub_socket.connect("tcp://localhost:5555");
-            sub_socket.setsockopt(ZMQ_SUBSCRIBE, "", 0);
-
-            // void *channel = calloc(500, 1);
-            // void *message = calloc(500, 1);
-
-            // sub_socket.recv(channel, 500);
-            // sub_socket.recv(message, 500);
-
-            while( true ){
-
-                std::map<string, BSONArrayBuilder *> messages;
-
-                zmq::message_t msg;
-                while (sub_socket.recv(&msg, ZMQ_DONTWAIT)) {
-
-                    string channelName = string((char *)msg.data());
-                    cout << "received a message" << endl;
-                    if (messages.find(channelName) == messages.end()) {
-                        cout << "inserting field for new channel" << endl;
-                        messages.insert(std::make_pair(channelName, new BSONArrayBuilder()));
-                    }
-
-                    BSONArrayBuilder *arrayBuilder = messages.find(channelName)->second;
-
-                    msg.rebuild();
-
-                    printf(">>>> receiving second time\n");
-                    sub_socket.recv(&msg);
-
-                    BSONObj messageObject((const char *)msg.data());
-                    arrayBuilder->append(messageObject);
-
-                    msg.rebuild();
-
-                    // message.append("channel", channelName);
-
-                    // // get the body
-                    // invariant(sock.);
-                    // invariant(!msg.more());
-                    // const auto body = BSONElement(static_cast<const char*>(msg.data()));
-                    // invariant(size_t(body.size()) == msg.size());
-                    // invariant(body.fieldNameStringData() == "msg");
-                    // message.append(body);
-                    // msg.rebuild();
-                }
-                
-                // result.append("messages", messages.arr());
-
-                // printf(">>>> subscribe socket received data. channel: %s, message: %s\n", channel, messageObject.jsonString().c_str());
-
-                // free(channel);
-                // free(message);
-
-                if( messages.size() > 0 ){
-                    printf(">>> iterating on map\n");
-
-                    BSONObjBuilder b;
-                    cout << "map length: " << messages.size() << endl;
-                    for (std::map<string, BSONArrayBuilder *>::iterator it = messages.begin(); 
-                         it != messages.end();
-                         ++it) {
-                        cout << it->first << endl;
-                        cout << it->second << endl;
-                        b.append( it->first , it->second->arr() );
-                        // delete(it->second);
-                    }
-
-                    printf(">>>> messages received: %s\n", b.obj().jsonString().c_str());
-                    break;
-                }
-            }
-        }
-
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
                  bool fromRepl ) {
 
@@ -151,21 +70,10 @@ namespace mongo {
 
             // do validation
 
-            boost::thread thr(bgsubthread, &zmqcontext);
-            sleep(1);
-
-            string channel = cmdObj["channel"].String();
-            BSONObj message = cmdObj["message"].Obj();
-
-            pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE);
-            pub_socket.send(message.objdata(), message.objsize());
-
-            thr.join();
-
             {
                 BSONObjBuilder b;
-                b.append( "channel" , channel );
-                b.append( "message" , message );
+                // b.append( "channel" , channel );
+                // b.append( "message" , message );
                 result.append( "stats" , b.obj() );
             }
 

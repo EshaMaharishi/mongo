@@ -26,24 +26,40 @@
  *    it in the license file.
  */
 
-// #pragma once
-
 #include "mongo/bson/oid.h"
 #include "mongo/base/init.h"
-#include <zmq.hpp>
+#include "mongo/db/commands/pubsub.h"
 
 namespace mongo {
+    
+    zmq::context_t zmq_context(1);
+    zmq::socket_t ext_pub_socket(zmq_context, ZMQ_PUB);
 
-    extern zmq::context_t zmq_context;
-    extern zmq::socket_t ext_pub_socket;
-    const char *const INT_PUBSUB_ENDPOINT = "inproc://pubsub";
 
+    /**
+     * In-memory data structures for pubsub.
+     * Subscribers can poll for more messages on their subscribed channels, and we
+     * keep an in-memory map of the id (cursor) they are polling on to the actual
+     * poller instance used to retrieve their messages.
+     *
+     * The map is wrapped in a class to facilitate clean (multi-threaded) access
+     * to the table from subscribe (to add entries), unsubscribe (to remove entries),
+     * and getMessages (to access entries) without exposing any locking mechanisms
+     * to the user.
+     */
 
-    class PubSubData {
-    public:
-        static OID addSubscription( OID oid, zmq::socket_t *sock_ptr );
-    private:
-        static std::map< OID, zmq::socket_t *> open_subs;
-    };
+    std::map<OID, zmq::socket_t *> PubSubData::open_subs = std::map<OID, zmq::socket_t *>();
+
+    // TODO: add a scoped lock around the table modification
+    OID PubSubData::addSubscription( OID oid, zmq::socket_t *sock_ptr ) { 
+        if (PubSubData::open_subs.find(oid) == PubSubData::open_subs.end()) {                             
+            std::cout << "inserting new subscription in table" << std::endl;                          
+            PubSubData::open_subs.insert( std::make_pair( oid, sock_ptr ) );       
+            return oid;
+        } else {
+            // subscription already exists, return existing OID
+            return PubSubData::open_subs.find( oid )->first; 
+        } 
+    } 
 
 }  // namespace mongo

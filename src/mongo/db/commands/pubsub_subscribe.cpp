@@ -47,8 +47,6 @@ namespace mongo {
     public:
         SubscribeCommand() : Command("subscribe") {}
 
-        zmq::context_t zmqcontext;
-
         virtual bool slaveOk() const { return false; }
         virtual bool slaveOverrideOk() const { return true; }
         virtual bool isWriteCommandForConfigServer() const { return false; }
@@ -74,9 +72,9 @@ namespace mongo {
             // do validation
 
             OID oid;
-            zmq::socket_t sub_sock(zmqcontext, ZMQ_PUB); 
+            zmq::socket_t sub_sock(zmq_context, ZMQ_SUB); 
 
-            //PubSubData::addSubscription( oid, &sub_sock ); 
+            PubSubData::addSubscription( oid, &sub_sock ); 
 
             string channel = cmdObj["channel"].String();
 
