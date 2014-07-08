@@ -41,7 +41,10 @@ namespace mongo {
 
     class PubSubData {
     public:
-        static OID addSubscription( OID oid, zmq::socket_t *sock_ptr );
+        static OID addSubscription( const char *channel );
+        static zmq::socket_t * getSubscription( OID oid );
+        static zmq::socket_t * removeSubscription( OID oid );
+
     private:
         static std::map< OID, zmq::socket_t *> open_subs;
     };

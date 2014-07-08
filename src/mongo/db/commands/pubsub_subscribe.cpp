@@ -47,6 +47,8 @@ namespace mongo {
     public:
         SubscribeCommand() : Command("subscribe") {}
 
+        zmq::context_t zmqcontext;
+
         virtual bool slaveOk() const { return false; }
         virtual bool slaveOverrideOk() const { return true; }
         virtual bool isWriteCommandForConfigServer() const { return false; }
@@ -63,26 +65,16 @@ namespace mongo {
             help << "{ subscribe : 'collection name' , key : 'a.b' , query : {} }";
         }
 
-        bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
-                 bool fromRepl ) {
+        bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
 
-            // Timer t;
-            // string ns = dbname + '.' + cmdObj.firstElement().valuestr();
+            // TODO: do input validation
 
-            // do validation
+            // TODO: add secure access to this channel?
+            // perhaps return an <oid, key> pair?
+            const char *channel = cmdObj["channel"].rawdata();
+            OID oid = PubSubData::addSubscription( channel ); 
 
-            OID oid;
-            zmq::socket_t sub_sock(zmq_context, ZMQ_SUB); 
-
-            PubSubData::addSubscription( oid, &sub_sock ); 
-
-            string channel = cmdObj["channel"].String();
-
-            {
-                BSONObjBuilder b;
-                b.append( "channel" , channel );
-                result.append( "stats" , b.obj() );
-            }
+            result.append( "sub_id" , oid );
 
             return true;
         }

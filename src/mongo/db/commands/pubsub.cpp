@@ -51,14 +51,29 @@ namespace mongo {
     std::map<OID, zmq::socket_t *> PubSubData::open_subs = std::map<OID, zmq::socket_t *>();
 
     // TODO: add a scoped lock around the table modification
-    OID PubSubData::addSubscription( OID oid, zmq::socket_t *sock_ptr ) { 
-        if (PubSubData::open_subs.find(oid) == PubSubData::open_subs.end()) {                             
-            std::cout << "inserting new subscription in table" << std::endl;                          
-            PubSubData::open_subs.insert( std::make_pair( oid, sock_ptr ) );       
-            return oid;
+    // and also around socket creation because of zmq context?
+    OID PubSubData::addSubscription( const char *channel ) { 
+        OID *oid = new OID();
+        oid->init();
+
+        zmq::socket_t *sub_sock = new zmq::socket_t(zmq_context, ZMQ_SUB);
+        sub_sock->connect( INT_PUBSUB_ENDPOINT );
+        sub_sock->setsockopt( ZMQ_SUBSCRIBE, channel, strlen(channel) );
+
+        open_subs.insert( std::make_pair( *oid, sub_sock ) );       
+        return *oid;
+    } 
+
+    // TODO: add a scoped lock around the table access
+    zmq::socket_t * PubSubData::getSubscription( OID oid ) { 
+        if (open_subs.find( oid ) == open_subs.end()) { 
+            printf("could not find oid\n");
+            return NULL;    
         } else {
-            // subscription already exists, return existing OID
-            return PubSubData::open_subs.find( oid )->first; 
+            printf("found oid\n");
+            zmq::socket_t *sub_sock = open_subs.find( oid )->second; 
+            printf("accessed socket\n");
+            return sub_sock;
         } 
     } 
 

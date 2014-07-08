@@ -59,24 +59,28 @@ namespace mongo {
         }
 
         virtual void help( stringstream &help ) const {
-            help << "{ getMessages : 'collection name' , key : 'a.b' , query : {} }";
+            help << "{ getMessages : 1 , _id : ObjectID }";
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result,
                  bool fromRepl ) {
 
-            // Timer t;
-            // string ns = dbname + '.' + cmdObj.firstElement().valuestr();
+            // TODO: do input validation
 
-            // do validation
+            BSONElement boid = cmdObj["sub_id"]; 
+            OID oid = boid.OID();
 
             // check socket out from global table
-            zmq::socket_t sub_socket(zmq_context, ZMQ_SUB);
-
+            zmq::socket_t *sub_sock = PubSubData::getSubscription( oid );
+            if( sub_sock == NULL )
+                return false;
+            
             std::map<string, BSONArrayBuilder *> messages;
 
             zmq::message_t msg;
-            while (sub_socket.recv(&msg, ZMQ_DONTWAIT)) {
+            while (sub_sock->recv(&msg, ZMQ_DONTWAIT)) {
+
+                printf("reached 1\n\n\n\n");
 
                 string channelName = string((char *)msg.data());
 
@@ -84,14 +88,20 @@ namespace mongo {
                     messages.insert(std::make_pair(channelName, new BSONArrayBuilder()));
                 }
 
+                printf("reached 2\n\n\n\n");
+
                 BSONArrayBuilder *arrayBuilder = messages.find(channelName)->second;
 
                 msg.rebuild();
 
-                sub_socket.recv(&msg);
+                sub_sock->recv(&msg);
+
+                printf("reached 3\n\n\n\n");
 
                 BSONObj messageObject((const char *)msg.data());
                 arrayBuilder->append(messageObject);
+
+                printf("reached 4\n\n\n\n");
 
                 msg.rebuild();
             }
@@ -110,7 +120,6 @@ namespace mongo {
             }
 
             result.append( "messages" , b.obj() );
-
             return true;
         }
 
