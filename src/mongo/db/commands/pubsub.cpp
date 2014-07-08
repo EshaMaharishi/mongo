@@ -62,15 +62,16 @@ namespace mongo {
 
     // TODO: add a scoped lock around the table modification
     OID PubSubData::addSubscription( const char *channel ) { 
-        OID *oid = new OID();
-        oid->init();
+        OID oid;
+        oid.init();
 
         zmq::socket_t *sub_sock = new zmq::socket_t(zmq_context, ZMQ_SUB);
         sub_sock->connect( INT_PUBSUB_ENDPOINT );
         sub_sock->setsockopt( ZMQ_SUBSCRIBE, channel, 0 );
 
-        open_subs.insert( std::make_pair( *oid, sub_sock ) );       
-        return *oid;
+        open_subs.insert( std::make_pair( oid, sub_sock ) );       
+
+        return oid;
     } 
 
     // TODO: add a scoped lock around the table access
@@ -88,11 +89,7 @@ namespace mongo {
             return 1;    
         } else {
             std::map<OID, zmq::socket_t *>::iterator it = open_subs.find( oid ); 
-            printf("before deleting oid\n");
-            delete( &(it->first) );
             it->second->close();
-
-            printf("before deleting socket\n");
             delete( it->second ); 
             open_subs.erase( it );
             return 0;
