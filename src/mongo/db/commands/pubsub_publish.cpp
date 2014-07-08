@@ -59,7 +59,7 @@ namespace mongo {
         }
 
         virtual void help( stringstream &help ) const {
-            help << "{ publish : 'collection name' , key : 'a.b' , query : {} }";
+            help << "{ publish : 1 , channel : 'string', message : { } }";
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg,
