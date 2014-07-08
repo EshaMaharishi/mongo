@@ -32,6 +32,7 @@
 
 #include "mongo/bson/oid.h"
 #include "mongo/base/init.h"
+#include "mongo/util/concurrency/mutex.h"
 #include <zmq.hpp>
 
 namespace mongo {
@@ -55,6 +56,7 @@ namespace mongo {
 
     private:
         static std::map<OID, zmq::socket_t *> open_subs;
+        static mongo::mutex _mutex;
     };
 
 }  // namespace mongo

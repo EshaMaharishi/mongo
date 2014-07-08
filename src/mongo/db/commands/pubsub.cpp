@@ -59,6 +59,7 @@ namespace mongo {
      */
 
     std::map<OID, zmq::socket_t *> PubSubData::open_subs = std::map<OID, zmq::socket_t *>();
+    mongo::mutex PubSubData::_mutex("pubsubdata");
 
     // TODO: add a scoped lock around the table modification
     OID PubSubData::addSubscription( const char *channel ) { 
@@ -69,6 +70,7 @@ namespace mongo {
         sub_sock->connect( INT_PUBSUB_ENDPOINT );
         sub_sock->setsockopt( ZMQ_SUBSCRIBE, channel, 0 );
 
+        scoped_lock lk( _mutex );
         open_subs.insert( std::make_pair( oid, sub_sock ) );       
 
         return oid;
@@ -76,6 +78,7 @@ namespace mongo {
 
     // TODO: add a scoped lock around the table access
     zmq::socket_t *PubSubData::getSubscription( OID oid ) { 
+        scoped_lock lk( _mutex );
         if (open_subs.find( oid ) == open_subs.end()) { 
             return NULL;    
         } else {
@@ -85,6 +88,7 @@ namespace mongo {
 
     // TODO: add a scoped lock around the table access
     int PubSubData::removeSubscription( OID oid ) { 
+        scoped_lock lk( _mutex );
         if (open_subs.find( oid ) == open_subs.end()) { 
             return 1;    
         } else {
