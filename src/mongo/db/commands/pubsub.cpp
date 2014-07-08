@@ -33,7 +33,14 @@
 namespace mongo {
     
     zmq::context_t zmq_context(1);
+    zmq::socket_t int_pub_socket(zmq_context, ZMQ_PUB);    
     zmq::socket_t ext_pub_socket(zmq_context, ZMQ_PUB);
+    zmq::socket_t ext_sub_socket(zmq_context, ZMQ_SUB);
+
+
+    void proxy(zmq::socket_t *subscriber, zmq::socket_t *publisher) {
+        zmq::proxy(*subscriber, *publisher, NULL);
+    }
 
 
     /**

@@ -95,9 +95,11 @@ namespace mongo {
                 result.append( "stats" , b.obj() );
             }
 
+            printf(">>>> here\n");
+
             return true;
         }
-        
+
     } publishCmd;
 
 }  // namespace mongo
