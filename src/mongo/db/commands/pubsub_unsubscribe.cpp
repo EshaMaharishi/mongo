@@ -59,7 +59,7 @@ namespace mongo {
         }
 
         virtual void help( stringstream &help ) const {
-            help << "{ unsubscribe : 'collection name' , key : 'a.b' , query : {} }";
+            help << "{ unsubscribe : 1, sub_id : ObjectId }";
         }
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
