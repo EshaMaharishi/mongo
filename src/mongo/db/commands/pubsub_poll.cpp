@@ -64,28 +64,34 @@ namespace mongo {
 
         bool run(OperationContext* txn, const string& dbname, BSONObj& cmdObj, int, string& errmsg, BSONObjBuilder& result, bool fromRepl ) {
 
-            // TODO: do input validation
-
+            // ensure that the sub_id argument is an ObjectID
+            uassert(18533,
+                    mongoutils::str::stream() << "The sub_id argument to the subscribe " <<  
+                        "command must be an ObjectID but was a " << typeName(cmdObj["sub_id"].type()),
+                    cmdObj["sub_id"].type() == jstOID );
             BSONElement boid = cmdObj["sub_id"]; 
             OID oid = boid.OID();
-            long timeout = cmdObj["timeout"].numberInt();
 
+            // retrieve the internal subscribe socket for this subscription
             zmq::socket_t *sub_sock = PubSubData::getSubscription( oid );
+            uassert(18534,
+                    mongoutils::str::stream() << "ObjectID passed as sub_id is not a valid " <<         
+                        "id for an open subscription.", 
+                    sub_sock != NULL );
 
-            // TODO: better error handling
-            if( sub_sock == NULL )
-                return false;
-
-            //  Initialize poll set
+            // initialize poll set
+            long timeout = cmdObj["timeout"].numberInt();
             zmq::pollitem_t items [] = {
                 { *sub_sock, 0, ZMQ_POLLIN, 0 }
             };
-
             zmq::poll(&items[0], 1, timeout);
-            
-            std::map<string, BSONArrayBuilder *> outbox;
 
+            // keep an outbox to demultiplex messages before serializing into BSON             
+            std::map<string, BSONArrayBuilder *> outbox;
             zmq::message_t msg;
+
+            // first part of each message is the channel name,
+            // second part is the message body (as a document)
             while ( sub_sock->recv(&msg, ZMQ_DONTWAIT)) { 
 
                 string channelName = string((char *)msg.data());
@@ -95,15 +101,16 @@ namespace mongo {
                     outbox.insert(std::make_pair(channelName, new BSONArrayBuilder()));
                 BSONArrayBuilder *arrayBuilder = outbox.find(channelName)->second;
 
+                // receive and save message body
                 msg.rebuild();
                 sub_sock->recv(&msg);
-
                 BSONObj messageObject((const char *)msg.data());
                 arrayBuilder->append(messageObject);
 
                 msg.rebuild();
             }
 
+            // serialize the outbox into BSON
             BSONObjBuilder b;    
             for (std::map<string, BSONArrayBuilder *>::iterator it = outbox.begin(); 
                  it != outbox.end();
