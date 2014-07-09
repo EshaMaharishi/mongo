@@ -88,12 +88,14 @@ namespace mongo {
                 members = repl::theReplSet->config().otherMemberHostnames();
             }
 
-            members.push_back(HostAndPort::me());
+            members.push_back(HostAndPort("localhost", serverGlobalParams.port));
 
             for (std::list<HostAndPort>::iterator it = members.begin(); it != members.end(); ++it) {
                 std::string endpoint = str::stream() << "tcp://" << it->host() << ":" << (it->port() + 2000);
                 ext_pub_socket.connect(endpoint.c_str());
             }
+
+            // sleep(1); // need this because send fails if called immediately after connect
 
             uassert(18529, "ZeroMQ failed to publish channel name to pub socket.",
                         ext_pub_socket.send(channel.c_str(), channel.size() + 1, ZMQ_SNDMORE) 
